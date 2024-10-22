@@ -146,7 +146,9 @@ const DropdownUser = () => {
                 fill=""
               />
             </svg>
+            <Link href="/#" className="text-primary">
             Log Out
+            </Link>
           </button>
         </div>
       )}

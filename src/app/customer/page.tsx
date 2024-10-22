@@ -5,25 +5,31 @@ import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import TableCustomer from "@/components/Tables/TableCustomer";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { fetchAdminData } from "@/components/Api/admin";
+
+
+interface Admin {
+  id: number;
+  last_name: string;
+  first_name: string;
+  middle_name: string;
+  email: string;
+  vehicle_count: number;
+  signup_date: string;
+  mobile: string;
+  wallet_ballance: number;
+  documents: string;
+  status: string;
+  services: string;
+  availability: string;
+}
 
 const CustomerPage = () => {
-  const [adminData, setAdminData] = useState([]); // Initialize as an empty array
+  const [adminData, setAdminData] = useState<Admin[]>([]);; // Initialize as an empty array
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/admin-dashboard"); // Replace with your API endpoint
-        const data = await response.json();
-        setAdminData(data); // Assuming data is an array of admin objects
-      } catch (error) {
-        console.error("Failed to fetch admin data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchAdminData(setAdminData, setLoading); // Use the imported function
   }, []);
 
   if (loading) return <div>Loading...</div>;
@@ -32,7 +38,7 @@ const CustomerPage = () => {
     <DefaultLayout>
       <Breadcrumb pageName="Customer" />
 
-      <div className="flex flex-col gap-10 pb-10">
+      <div className="max-h-screen">
         <TableCustomer initialAdminData={adminData} />
       </div>
     </DefaultLayout>
