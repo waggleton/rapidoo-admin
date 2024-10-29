@@ -1,18 +1,19 @@
-import ECommerce from "@/components/Dashboard/E-commerce";
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import SignIn from "./auth/signin/page";
 
-export const metadata: Metadata = {
-  title:
-    "Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
-};
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import ECommerce from "@/components/Dashboard/E-commerce";
+import SignIn from "./auth/signin/page";
+import DefaultLayout from '@/components/Layouts/DefaultLayout';
 
 export default function Home() {
-  return (
-    <>
-        <SignIn />
-    </>
-  );
+  const cookieStore = cookies();
+  const token = cookieStore.get('token');
+
+  
+  if (!token) {
+    redirect('/auth/signin');
+  }
+
+  
+  return <DefaultLayout><ECommerce /></DefaultLayout>;
 }
