@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ClickOutside from "@/components/ClickOutside";
@@ -8,6 +8,18 @@ import LogoutButton from "../Api/admin";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userName, setUserName] = useState<string | undefined>(undefined);
+  
+
+  useEffect(() => {
+    const user_name = Cookies.get('user_name');
+    if (user_name) {
+      setUserName(user_name);
+    }
+    else{
+      setUserName("missing")
+    }
+  });
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
@@ -18,7 +30,7 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            Thomas Anree
+            {userName}
           </span>
           <span className="block text-xs">UX Designer</span>
         </span>

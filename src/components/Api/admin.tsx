@@ -5,7 +5,7 @@ import Link from "next/link";
 const ADMIN_BASE_URL = 'http://127.0.0.1:8000/v1/admin/';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { signIn, getSession } from 'next-auth/react';
+import { signIn, getSession, signOut } from 'next-auth/react';
 
 
 interface Admin {
@@ -90,6 +90,35 @@ export const updateAdminStatus = async (adminId: number, newStatus: string, setA
   }
 };
 
+export const updateUserMobile = async (adminId: number, mobileNumber: string) => {
+  try {
+    const response = await fetch(ADMIN_BASE_URL + "update_mobile/"+ adminId, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        mobile: mobileNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update admin status");
+    }
+
+    const updatedAdmin = await response.json();
+    console.log("Admin updated successfully:", updatedAdmin);
+
+  
+
+
+  } catch (error) {
+    console.error("Error updating admin:", error);
+  } finally {
+
+  }
+};
+
 export const AttemptLogIn = async (event: React.FormEvent<HTMLFormElement>, setAlertVisibility: React.Dispatch<React.SetStateAction<boolean>>, setEmail: React.Dispatch<React.SetStateAction<string>>, setPassword: React.Dispatch<React.SetStateAction<string>>, setEmailRequired: React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired: React.Dispatch<React.SetStateAction<boolean>>) => {
   event.preventDefault();
 
@@ -135,7 +164,9 @@ export const AttemptLogIn = async (event: React.FormEvent<HTMLFormElement>, setA
     }
 
     if (data.message === "login success") {
-      Cookies.set("token", data.token); 
+      Cookies.set("token", data.token);
+      Cookies.set("user_name", data.name);
+      Cookies.set("user_email", email)
       setAlertVisibility(false);
       window.location.href = "/#";
     }
@@ -164,19 +195,62 @@ export const AttemptLogIn = async (event: React.FormEvent<HTMLFormElement>, setA
 
 }
 
-export const AttemptRegister = async(event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
+export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetStateAction<boolean>>, setEmailRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordStrong : React.Dispatch<React.SetStateAction<boolean>>, setConfirmPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setMatchPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setShowRegisteredAlert : React.Dispatch<React.SetStateAction<boolean>>,  nameRequired : boolean, emailRequired : boolean, passwordRequired : boolean, confirmPasswordRequired : boolean, confirmMatchPasswordRequired : boolean, email : string, name: string, firstPassword: string, matchPassword: string) => {
 
-  const form = event.target as HTMLFormElement;
-
-  const formData = new FormData(form);
-  const email = formData.get('email') as string;
-  const name = formData.get('name') as string;
-  const password = formData.get('password') as string;
+  const user_email = email;
+  const user_name = name;
+  const first_password = firstPassword;
+  const match_password = matchPassword;
 
   console.log(email);
   console.log(name);
-  console.log(password);
+  console.log(firstPassword);
+  console.log(matchPassword);
+
+
+  if (!email) {
+    setEmailRequired(true);
+  } else {
+    setEmailRequired(false);
+  }
+
+  if (!name) {
+    setNameRequired(true);
+  } else {
+    setNameRequired(false);
+  }
+
+  if (!firstPassword) {
+    setPasswordRequired(true);
+  } else {
+    setPasswordRequired(false);
+    var password_strength = checkPasswordStrength(first_password);
+    if (password_strength == "password_strong"){
+      setPasswordStrong(false);
+    }
+    else {
+      setPasswordStrong(true);
+    }
+  }
+
+  if (!matchPassword) {
+    setConfirmPasswordRequired(true);
+  } else {
+    
+    if(first_password != match_password){
+      setPasswordRequired(false);
+      setConfirmPasswordRequired(false);
+      setMatchPasswordRequired(true);
+    }
+    else{
+      setMatchPasswordRequired(false);
+    }
+  
+    setConfirmPasswordRequired(false);
+  }
+
+
+  if(nameRequired == false && emailRequired == false && confirmMatchPasswordRequired == false){
 
   const response = await fetch(ADMIN_BASE_URL + "register", {
     method: "post",
@@ -186,7 +260,7 @@ export const AttemptRegister = async(event: React.FormEvent<HTMLFormElement>) =>
     body: JSON.stringify({
       email: email,
       name: name,
-      password: password
+      password: match_password
     }),
   });
 
@@ -195,14 +269,42 @@ export const AttemptRegister = async(event: React.FormEvent<HTMLFormElement>) =>
   
     console.log("Message:", data.message);
 
+    if (data.message == "already registered"){
+      setShowRegisteredAlert(true);
+    }
+    else{
+
+      Cookies.set("token", data.token);
+      Cookies.set("user_name", name);
+      Cookies.set("user_email", email); 
+      window.location.href = "/#";
+
+    }
+    
+
   }
   else {
     const errorData = await response.json();
     
     console.error("Error message:", errorData.message);
   }
+  }
 
+}
 
+function checkPasswordStrength(password: string) {
+  var checkUppercase = new RegExp('[A-Z]');
+  var checkLowercase = new RegExp('[a-z]');
+  var checkDigit = new RegExp('[0-9]');
+  var checkPasswordLength = new RegExp('.{8}');
+  var checkSpecialChar = new RegExp('[^a-zA-Z0-9]');
+
+  if(checkUppercase.test(password) && checkLowercase.test(password) && checkDigit.test(password) && checkSpecialChar.test(password) && checkPasswordLength.test(password)){
+    return "password_strong"
+  }
+  else{
+    return "password_weak"
+}
 }
 
 export default function LogoutButton() {
@@ -211,6 +313,10 @@ export default function LogoutButton() {
   const handleLogout = () => {
     
     Cookies.remove('token');
+    Cookies.remove('user_name');
+    Cookies.remove('user_email');
+
+    signOut();
    
     router.push('/auth/signin');
   };
@@ -269,6 +375,7 @@ export const gmailSignIn = async (email: string ) => {
   } catch (error) {
     console.error("An error occurred while posting login data:", error);
   }
+  
 };
 
 

@@ -2,7 +2,8 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import google_redirect from '@/app/auth/google_signin_success/page';
-import GoogleSignUp from '@/app/auth/google_signup/signup_form';
+import Cookies from 'js-cookie';
+
 const ADMIN_BASE_URL = 'http://127.0.0.1:8000/v1/admin/';
 
 const gmailSignIn = async (email) => {
@@ -38,16 +39,20 @@ const handler = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ account, profile }) {
-      // Wait for the gmailSignIn function to resolve
+    async signIn({ account, profile }) { 
       const signInResult = await gmailSignIn(profile.email);
 
       if (signInResult === true) {
-        return `/auth/google_signin_success`;
-      } else if (signInResult === false) {
-        return `/auth/google_signup`;
+
+        Cookies.set('user_name', profile.name);
+        Cookies.set('user_email', profile.email);
+
+        return `/auth/google_signin_success?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}`;
+
       } else {
-        return `/calendar`;
+        
+        return `/auth/google_signup?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}`;
+
       }
     },
 

@@ -25,7 +25,7 @@ interface AdminDashboardProps {
   initialAdminData: Admin[]; // Changed from adminData to initialAdminData
 }
 
-const TableCustomer: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
+const TableRider: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
   const [adminData, setAdminData] = useState<Admin[]>(initialAdminData); // Set local state
   const [loading, setLoading] = useState(false);
   const [mobileUpdateModal, setMobileUpdateModal] = useState<number | null>(null);;
@@ -58,7 +58,7 @@ const TableCustomer: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
       >
         <div className="truncate whitespace-normal p-2">
           <h5 className="text-m font-medium uppercase">
-          <button className="btn btn-square btn-xs" onClick={() => toggleCheckboxes(!setCheckbox)}>
+          <button className="btn btn-square btn-xs bg-black-2 dark:bg-white" onClick={() => toggleCheckboxes(!setCheckbox)}>
           </button>
           </h5>
         </div>
@@ -124,8 +124,8 @@ const TableCustomer: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
           <div className="flex items-center justify-center truncate whitespace-normal p-2">
             <p className="text-xs text-black dark:text-white">{admin.vehicle_count}</p>
           </div>
-          <div className="flex items-center justify-center truncate whitespace-normal p-2">
-            <p className="text-xs text-meta-3">
+          <div className="flex items-center text-black dark:text-white justify-center truncate whitespace-normal p-2">
+            <p className="text-xs">
               {new Date(admin.signup_date).toLocaleDateString()}
             </p>
           </div>
@@ -137,18 +137,18 @@ const TableCustomer: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
               {mobileUpdateModal === admin.id && <UpdateMobileBox admin_id = {admin.id} setMobileUpdateModal = {setMobileUpdateModal} setAdminData= {setAdminData} setLoading = {setLoading}  />}
             </p>
           </div>
-          <div className="flex items-center justify-center truncate whitespace-normal p-2">
-            <p className="text-xs text-meta-5">P {admin.wallet_ballance}</p>
+          <div className="flex items-center text-black dark:text-white justify-center truncate whitespace-normal p-2">
+            <p className="text-xs">P {admin.wallet_ballance}</p>
           </div>
-          <div className="flex items-center justify-center truncate whitespace-normal p-2">
-            <p className="text-xs text-meta-5">
+          <div className="flex items-center text-black dark:text-white justify-center truncate whitespace-normal p-2">
+            <p className="text-xs">
               {admin.documents}
               <br />
               <button className="btn btn-circle" />
             </p>
           </div>
-          <div className="flex items-center justify-center truncate whitespace-normal p-2">
-            <p className="text-xs text-meta-5">
+          <div className="flex items-center text-black dark:text-white justify-center truncate whitespace-normal p-2">
+            <p className="text-xs">
               {admin.services}
               <br />
               <button className="btn btn-circle">
@@ -169,25 +169,25 @@ const TableCustomer: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
               </button>
             </p>
           </div>
-          <div className="flex items-center justify-center truncate whitespace-normal p-2">
-            <p className="text-xs text-meta-5">
+          <div className="flex items-center text-black dark:text-white justify-center truncate whitespace-normal p-2">
+            <p className="text-xs">
               {admin.availability}
               <br />
               <Link href="">Edit Availability</Link>
             </p>
           </div>
-          <div className="flex items-center justify-center truncate whitespace-normal p-2">
-            <p className="text-xs text-meta-5">{admin.status}</p>
+          <div className="flex items-center text-black dark:text-white justify-center truncate whitespace-normal p-2">
+            <p className="text-xs">{admin.status}</p>
           </div>
-          <div className="flex items-center justify-center whitespace-normal p-2">
+          <div className="flex items-center text-black dark:text-white justify-center whitespace-normal p-2">
             <div className="dropdown dropdown-left">
               <div tabIndex={0} role="button" className="btn m-1 bg-transparent border-transparent text-white" onClick={toggleDropdown}>
-                ...
+              <p className="text-xs text-black dark:text-white">...</p>
               </div>
               {dropdownVisible &&
               <ul
                 tabIndex={0}
-                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
+                className="dropdown-content menu bg-gray-400 rounded-box z-[1] w-25 p-2 shadow"
               >
                 {/* Handle status update based on selection */}
                 <li>
@@ -239,4 +239,4 @@ export async function getServerSideProps() {
   };
 }
 
-export default TableCustomer;
+export default TableRider;
