@@ -24,6 +24,34 @@ interface Admin {
   availability: string;
 }
 
+interface Trips {
+  index : number;
+  itrip_id : number;
+  order_id : number;
+  booked_by : string;
+  booking_no : number;
+  pickup_address : string;
+  dropoff_address : string;
+  cs_lat : number;
+  cs_long : number;
+  rider_lat : number;
+  rider_long : number;
+  distance : number;
+  tripjob_date : string;
+  time_request : string;
+  time_end : string;
+  store : string;
+  provider : number;
+  customer : string;
+  fare : number;
+  type : string;
+  transaction_type : string;
+  pickup_status : string;
+  dropoff_status : string;
+  status: string;
+}
+
+
 interface AdminDashboardProps {
   initialAdminData: Admin[]; 
 }
@@ -36,6 +64,19 @@ export const fetchAdminData = async (setAdminData: React.Dispatch<React.SetState
     const response = await fetch(ADMIN_BASE_URL + "admin_dashboard");
     const data = await response.json();
     setAdminData(data); 
+  } catch (error) {
+    console.error("Failed to fetch admin data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+export const fetchTripsData = async (setTripsData: React.Dispatch<React.SetStateAction<Trips[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
+  setLoading(true);
+  try {
+    const response = await fetch(ADMIN_BASE_URL + "trips");
+    const data = await response.json();
+    setTripsData(data); 
   } catch (error) {
     console.error("Failed to fetch admin data:", error);
   } finally {

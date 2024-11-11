@@ -1,5 +1,7 @@
+import {nextui} from '@nextui-org/theme';
 import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
+import daisyui from "daisyui"
 const colors = require("tailwindcss/colors");
 
 const config: Config = {
@@ -7,6 +9,7 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./node_modules/@nextui-org/theme/dist/components/(date-picker|button|ripple|spinner|calendar|date-input|popover).js"
   ],
   darkMode: "class",
   theme: {
@@ -342,6 +345,8 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('daisyui'),],
+  plugins: [
+    require('daisyui'),
+  ],
 };
 export default config;
