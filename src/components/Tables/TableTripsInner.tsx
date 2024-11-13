@@ -50,10 +50,10 @@ interface TableTripsInnerProps {
 
 const TableTripsInner: React.FC<TableTripsInnerProps> = ({ currentTrips, adminData }) => {
   return (
-    <div className="overflow-x-auto max-w-[105ch]">
+    <div className="overflow-x-auto max-w-[105ch] border border-black-2">
     <table className="table dark:bg-black-2 bg-white rounded-none ">
       <thead>
-        <tr className="bg-gray-500 text-black-2">
+        <tr className="bg-gray-400 text-black-2">
           <th className="truncate whitespace-normal p-2">iTripId</th>
           <th className="truncate whitespace-normal p-2">OrderId</th>
           <th className="truncate whitespace-normal p-2">Booked By</th>
@@ -69,12 +69,13 @@ const TableTripsInner: React.FC<TableTripsInnerProps> = ({ currentTrips, adminDa
           <th className="truncate whitespace-normal p-2">Fare</th>
           <th className="truncate whitespace-normal p-2">Type</th>
           <th className="truncate whitespace-normal p-2">Transaction Type</th>
+          <th className="truncate whitespace-normal p-2">Proof</th>
           <th className="truncate whitespace-normal p-2">Trip Status</th>
         </tr>
       </thead>
       <tbody>
         {currentTrips.map((trips, key) => (
-          <tr className="bg-gray-400 dark:bg-black-2" key={key}>
+          <tr className="bg-gray-300 dark:bg-black-2 text-black-2 dark:text-gray-200" key={key}>
             <td className="p-2">{trips.itrip_id}</td>
             <td className="p-2">{trips.order_id}</td>
             <td className="p-2">{trips.booked_by}</td>
@@ -83,11 +84,11 @@ const TableTripsInner: React.FC<TableTripsInnerProps> = ({ currentTrips, adminDa
             <td className="p-2">
               CS LatLng: <br />
               {trips.cs_lat}, {trips.cs_long} <br />
-              <button className="btn btn-sm">View Reverse Geocoding</button><br />
+              <button className="btn btn-sm border border-black-2">View Reverse Geocoding</button><br />
               <br />
               Rider LatLng: <br />
               {trips.rider_lat}, {trips.rider_long}
-              <button className="btn btn-sm">View Reverse Geocoding</button><br />
+              <button className="btn btn-sm border border-black-2 ">View Reverse Geocoding</button><br />
               <br />
               Distance: {trips.distance} KM
             </td>
@@ -106,9 +107,10 @@ const TableTripsInner: React.FC<TableTripsInnerProps> = ({ currentTrips, adminDa
             <td className="p-2">{trips.type}</td>
             <td className="p-2">{trips.transaction_type}</td>
             <td className="p-2">
-              <button className="btn btn-sm">View Pickup</button><br />
-              <button className="btn btn-sm">View Dropoff</button>
+              <button className="btn btn-sm border border-black-2">View Pickup</button><br />
+              <button className="btn btn-sm border border-black-2">View Dropoff</button>
             </td>
+            <td className="p-2">{trips.status}</td>
           </tr>
         ))}
       </tbody>

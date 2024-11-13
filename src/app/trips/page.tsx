@@ -13,7 +13,7 @@ const TripsPage = () => {
     <DefaultLayout>
       <Breadcrumb pageName="Trips" />
 
-      <div className="max-h-screen">
+      <div className="max-h-max pb-17">
         <TableTrips />
       </div>
     </DefaultLayout>
