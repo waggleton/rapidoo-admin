@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import ImageModal from "../Modal/ImageModal";
 
 interface Admin {
   id: number;
@@ -49,6 +50,10 @@ interface TableTripsInnerProps {
 }
 
 const TableTripsInner: React.FC<TableTripsInnerProps> = ({ currentTrips, adminData }) => {
+
+  const [pickupImageModal, showPickupImageModal] = useState<number | null>(null);
+  const [dropoffImageModal, showDropoffImageModal] = useState<number | null>(null);
+
   return (
     <div className="overflow-x-auto max-w-[105ch] border border-black-2">
     <table className="table dark:bg-black-2 bg-white rounded-none ">
@@ -107,8 +112,13 @@ const TableTripsInner: React.FC<TableTripsInnerProps> = ({ currentTrips, adminDa
             <td className="p-2">{trips.type}</td>
             <td className="p-2">{trips.transaction_type}</td>
             <td className="p-2">
-              <button className="btn btn-sm border border-black-2">View Pickup</button><br />
-              <button className="btn btn-sm border border-black-2">View Dropoff</button>
+              <button className="btn btn-sm border border-black-2" 
+              onClick={() => showPickupImageModal(trips.index)}>View Pickup</button>
+
+              {pickupImageModal === trips.index && <ImageModal showImageModal={showPickupImageModal} image_dir={trips.pickup_status} /> }
+                <br />
+              <button className="btn btn-sm border border-black-2" onClick={() => showDropoffImageModal(trips.index)}>View Dropoff</button>
+              {dropoffImageModal === trips.index && <ImageModal showImageModal={showDropoffImageModal} image_dir={trips.dropoff_status} /> }
             </td>
             <td className="p-2">{trips.status}</td>
           </tr>

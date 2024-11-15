@@ -28,7 +28,7 @@ interface AdminDashboardProps {
 const TableRider: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
   const [adminData, setAdminData] = useState<Admin[]>(initialAdminData); // Set local state
   const [loading, setLoading] = useState(false);
-  const [mobileUpdateModal, setMobileUpdateModal] = useState<number | null>(null);;
+  const [mobileUpdateModal, setMobileUpdateModal] = useState<number | null>(null);
 
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const toggleDropdown = () => setDropdownVisible(!dropdownVisible);
@@ -227,16 +227,4 @@ const TableRider: React.FC<AdminDashboardProps> = ({ initialAdminData }) => {
     </div>
   );
 };
-
-export async function getServerSideProps() {
-  const res = await fetch("http://localhost:8000/admin_dashboard");
-  const initialAdminData = await res.json();
-
-  return {
-    props: {
-      initialAdminData,
-    },
-  };
-}
-
 export default TableRider;

@@ -56,6 +56,50 @@ interface AdminDashboardProps {
   initialAdminData: Admin[]; 
 }
 
+interface Transaction {
+  id: number;
+  account_id: number;
+  rider_account_id: number;
+  reference_id: string;
+  coupon: string;
+  distance: number;
+  sender_details: string;
+  receiver_details: string;
+  pickup_address: string;
+  dropoff_address: string;
+  multiple_dropoff: boolean;
+  rebate: number;
+  processing_fee: number;
+  discount: number;
+  transaction_amount: number;
+  total_amount: number;
+  tip: number;
+  notes: string;
+  vehicle_type: string;
+  payment_method: string;
+  sender_payment: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  customer_name: string;
+  rider_earned: number;
+  rapidoo_earned: number;
+  original_pickup_address: string;
+  original_dropoff_address: string;
+}
+
+export const fetchTransactionsnData = async (setTransactionsData: React.Dispatch<React.SetStateAction<Transaction[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
+  setLoading(true);
+  try {
+    const response = await fetch(ADMIN_BASE_URL + "transactions");
+    const data = await response.json();
+    setTransactionsData(data); 
+  } catch (error) {
+    console.error("Failed to fetch admin data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
 
 export const fetchAdminData = async (setAdminData: React.Dispatch<React.SetStateAction<Admin[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
