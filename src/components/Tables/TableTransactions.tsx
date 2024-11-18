@@ -45,10 +45,9 @@ const TableTransactions = () => {
   const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);  // for pagination
-  const [rowsPerPage] = useState(3);  // items per page
+  const [rowsPerPage, setRowsPerPage] = useState(5);  // items per page
 
   const [currentTransactions, setCurrentTransactions] = useState(transactionsData)
-  const totalPages = Math.ceil(transactionsData.length / rowsPerPage);
 
   const indexOfLastTrip = currentPage * rowsPerPage;
   const indexOfFirstTrip = indexOfLastTrip - rowsPerPage;
@@ -67,15 +66,25 @@ const TableTransactions = () => {
   const [processingFeeTextSearchText, setProcessingFeeSearchText] = useState("")
   const [discountSearchText, setDiscountSearchText] = useState("")
   const [transAmountSearchText, setTransAmountSearchText] = useState("")
+  const [transAmountStartNumber, setTransAmountStartNumber] = useState<number | undefined>(undefined)
+  const [transAmountEndNumber, setTransAmountEndNumber] = useState<number | undefined>(undefined)
   const [totalAmountSearchText, setTotalAmountSearchText] = useState("")
+  const [totalAmountStartNumber, setTotalAmountStartNumber] = useState<number | undefined>(undefined)
+  const [totalAmountEndNumber, setTotalAmountEndNumber] = useState<number | undefined>(undefined)
   const [tipSearchText, setTipSearchText] = useState("")
+  const [tipStartNumber, setTipStartNumber] = useState<number | undefined>(undefined)
+  const [tipEndNumber, setTipEndNumber] = useState<number | undefined>(undefined)
   const [notesSearchText, setNotesSearchText] = useState("")
   const [vehicleTypeSearchText, setVehicleTypeSearchText] = useState("")
   const [paymentSearchText, setPaymentSearchText] = useState("")
   const [senderPaySearchText, setSenderPaySearchText] = useState("")
   const [statusSearchText, setStatusSearchText] = useState("")
   const [createdAtSearchText, setCreatedAtSearchText] = useState("")
+  const [createdAtFromDate, setCreatedAtFromDate] = useState("")
+  const [createdAtToDate, setCreatedAtToDate] = useState("")
   const [updatedAtSearchText, setUpdatedAtSearchText] = useState("")
+  const [updatedAtFromDate, setUpdatedAtFromDate] = useState("")
+  const [updatedAtToDate, setUpdatedAtToDate] = useState("")
   const [customerNameSearchText, setCustomerNameSearchText] = useState("")
   const [riderEarnedSearchText, setRiderEarnedSearchText] = useState("")
   const [rapidooEarnedSearchText, setRapidooEarnedSearchText] = useState("")
@@ -85,6 +94,21 @@ const TableTransactions = () => {
 
 // Helper function to handle null and undefined values
 const safeToString = (value: string | number | boolean) => (value ?? '').toString();
+
+const parseDate = (dateStr: string): Date => {
+  let date: Date;
+
+  if (dateStr.includes('T')) {
+    // If the date string already includes 'T', we just parse it as is and set time to midnight
+    date = new Date(dateStr);
+    date.setHours(0, 0, 0, 0); // Ensure time is set to midnight
+  } else {
+    // If the date string doesn't include 'T', append 'T00:00:00' to set the time to midnight
+    date = new Date(dateStr + 'T00:00:00');
+  }
+
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+};
 
 const filteredTransactions = transactionsData.filter((transaction) => {
   const matchesSearchText =
@@ -102,23 +126,56 @@ const filteredTransactions = transactionsData.filter((transaction) => {
     safeToString(transaction.processing_fee).includes(processingFeeTextSearchText) &&
     safeToString(transaction.discount).includes(discountSearchText) &&
     safeToString(transaction.transaction_amount).includes(transAmountSearchText) &&
-    safeToString(transaction.total_amount).includes(totalAmountSearchText) &&
     safeToString(transaction.tip).includes(tipSearchText) &&
     safeToString(transaction.notes).includes(notesSearchText) &&
     safeToString(transaction.vehicle_type).includes(vehicleTypeSearchText) &&
     safeToString(transaction.payment_method).includes(paymentSearchText) &&
     safeToString(transaction.sender_payment).includes(senderPaySearchText) &&
     safeToString(transaction.status).includes(statusSearchText) &&
-    safeToString(transaction.created_at).includes(createdAtSearchText) &&
-    safeToString(transaction.updated_at).includes(updatedAtSearchText) &&
     safeToString(transaction.customer_name).includes(customerNameSearchText) &&
     safeToString(transaction.rider_earned).includes(riderEarnedSearchText) &&
     safeToString(transaction.rapidoo_earned).includes(rapidooEarnedSearchText) &&
     safeToString(transaction.original_pickup_address).includes(ogPickupAdrSearchText) &&
     safeToString(transaction.original_dropoff_address).includes(ogDropoffAdrSearchText);
 
-  return matchesSearchText;
+  let matchesTransactionAmountRange = true;
+  if (transAmountStartNumber && transAmountEndNumber){
+    const total_amount = transaction.transaction_amount;
+    matchesTransactionAmountRange = transAmountStartNumber <= total_amount && total_amount <= transAmountEndNumber;
+  }
+
+  let matchesTotalAmountRange = true;
+  if (totalAmountStartNumber && totalAmountEndNumber){
+    const total_amount = transaction.total_amount;
+    matchesTotalAmountRange = totalAmountStartNumber <= total_amount && total_amount <= totalAmountEndNumber;
+  }
+
+  let matchesTipRange = true;
+  if (tipStartNumber && tipEndNumber){
+    const total_amount = transaction.total_amount;
+    matchesTipRange = tipStartNumber <= total_amount && total_amount <= tipEndNumber;
+  }
+
+  let matchesCreatedAtDateRange = true;
+  if (createdAtFromDate && createdAtToDate) {
+    const tripDate = parseDate(transaction.created_at);
+    const startDate = parseDate(createdAtFromDate);
+    const endDate = parseDate(createdAtToDate);
+    matchesCreatedAtDateRange = tripDate >= startDate && tripDate <= endDate;
+  }
+
+  let matchesUpdatedAtDateRange = true;
+  if (updatedAtFromDate && updatedAtToDate) {
+    const tripDate = parseDate(transaction.updated_at);
+    const startDate = parseDate(updatedAtFromDate);
+    const endDate = parseDate(updatedAtToDate);
+    matchesUpdatedAtDateRange = tripDate >= startDate && tripDate <= endDate;
+  }
+
+  return matchesSearchText && matchesTransactionAmountRange && matchesTotalAmountRange && matchesTipRange && matchesCreatedAtDateRange && matchesUpdatedAtDateRange;
 });
+
+const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
 
 
 
@@ -126,13 +183,57 @@ const filteredTransactions = transactionsData.filter((transaction) => {
     fetchTransactionsnData(setTransactionsData, setLoading);
     fetchTransactionsnData(setFullTransactionsData, setLoading); 
   }, []);
+  
+
+  useEffect(() => {setCurrentPage(1)}, 
+  [accountIDSearchText,
+    riderAccountIDSearchText,
+    refIDSearchText,
+    couponSearchText,
+    distanceSearchText,
+    senderSearchText,
+    recieverSearchText,
+    pickupadrSearchText,
+    dropoffadrSearchText,
+    multiDropSearchText,
+    rebateSearchText,
+    processingFeeTextSearchText,
+    discountSearchText,
+    transAmountSearchText,
+    transAmountStartNumber,
+    transAmountEndNumber,
+    totalAmountSearchText,
+    totalAmountStartNumber,
+    totalAmountEndNumber,
+    tipSearchText,
+    tipStartNumber,
+    tipEndNumber,
+    notesSearchText,
+    vehicleTypeSearchText,
+    paymentSearchText,
+    senderPaySearchText,
+    statusSearchText,
+    createdAtSearchText,
+    createdAtFromDate,
+    createdAtToDate,
+    updatedAtSearchText,
+    updatedAtFromDate,
+    updatedAtToDate,
+    customerNameSearchText,
+    riderEarnedSearchText,
+    rapidooEarnedSearchText,
+    ogPickupAdrSearchText,
+    ogDropoffAdrSearchText,])
 
   useEffect(() => {
     
       setCurrentTransactions(filteredTransactions.slice(indexOfFirstTrip, indexOfLastTrip));
+      
     
   }, [
     loading,
+    rowsPerPage,
+    currentPage,
     accountIDSearchText,
     riderAccountIDSearchText,
     refIDSearchText,
@@ -147,15 +248,25 @@ const filteredTransactions = transactionsData.filter((transaction) => {
     processingFeeTextSearchText,
     discountSearchText,
     transAmountSearchText,
+    transAmountStartNumber,
+    transAmountEndNumber,
     totalAmountSearchText,
+    totalAmountStartNumber,
+    totalAmountEndNumber,
     tipSearchText,
+    tipStartNumber,
+    tipEndNumber,
     notesSearchText,
     vehicleTypeSearchText,
     paymentSearchText,
     senderPaySearchText,
     statusSearchText,
     createdAtSearchText,
+    createdAtFromDate,
+    createdAtToDate,
     updatedAtSearchText,
+    updatedAtFromDate,
+    updatedAtToDate,
     customerNameSearchText,
     riderEarnedSearchText,
     rapidooEarnedSearchText,
@@ -173,7 +284,7 @@ const filteredTransactions = transactionsData.filter((transaction) => {
   return (
     <div className="max-w-[105ch]">
                   {/* Pagination Controls */}
-                  <div className="flex justify-center mt-4">
+        {/* <div className="flex justify-center mt-4">
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -191,8 +302,80 @@ const filteredTransactions = transactionsData.filter((transaction) => {
         >
           Next
         </button>
-      </div>
+      </div> */}
 
+      <div tabIndex={0} onClick={() => {  
+                setAccountIDSearchText("")
+                setRiderAccountIDSearchText("")
+                setRefIDSearchText("")
+                setCouponSearchText("")
+                setDistanceSearchText("")
+                setSenderSearchText("")
+                setRecieverSearchText("")
+                setPickupAdrSearchText("")
+                setDropoffAdrSearchText("")
+                setMultiDropAdrSearchText("")
+                setRebateSearchText("")
+                setProcessingFeeSearchText("")
+                setDiscountSearchText("")
+                setTransAmountSearchText("")
+                setTransAmountStartNumber(undefined)
+                setTransAmountEndNumber(undefined)
+                setTotalAmountSearchText("")
+                setTotalAmountStartNumber(undefined)
+                setTotalAmountEndNumber(undefined)
+                setTipSearchText("")
+                setTipStartNumber(undefined)
+                setTipEndNumber(undefined)
+                setNotesSearchText("")
+                setVehicleTypeSearchText("")
+                setPaymentSearchText("")
+                setSenderPaySearchText("")
+                setStatusSearchText("")
+                setCreatedAtFromDate("")
+                setCreatedAtToDate("")
+                setUpdatedAtFromDate("")
+                setUpdatedAtToDate("")
+                setCustomerNameSearchText("")
+                setRiderEarnedSearchText("")
+                setRapidooEarnedSearchText("")
+                setOgPickupAdrSearchText("")
+                setOgDropoffAdrSearchText("")
+                }} role="button" className="btn m-1 w-35 h-10 bg-yellow-200 border-2 border-black-2">
+                Reset
+              </div>
+
+              <div className="dropdown absolute right-10">
+                <b>Rows Per Page:</b>
+                <div tabIndex={0} role="button" className="btn m-1 w-20 h-10 bg-gray-300 border-2 border-black-2">
+                <span>{rowsPerPage}</span>
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="currentColor" 
+                    className="w-4 h-4"
+                >
+                    <path 
+                        fillRule="evenodd" 
+                        d="M12 15.5l-6-6h12l-6 6z" 
+                        clipRule="evenodd"
+                    />
+                </svg>
+                </div>
+                <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-25 p-2 shadow">
+                <li><a onClick={() => setRowsPerPage(5)}>5</a></li>      
+                <li><a onClick={() => setRowsPerPage(10)}>10</a></li>
+                <li><a onClick={() => setRowsPerPage(15)}>15</a></li>         
+                <li><a onClick={() => setRowsPerPage(20)}>20</a></li>
+                <li><a onClick={() => setRowsPerPage(25)}>25</a></li>
+                <li><a onClick={() => setRowsPerPage(30)}>30</a></li>
+                <li><a onClick={() => setRowsPerPage(35)}>35</a></li>
+                <li><a onClick={() => setRowsPerPage(40)}>40</a></li>
+                <li><a onClick={() => setRowsPerPage(45)}>45</a></li>
+                <li><a onClick={() => setRowsPerPage(50)}>50</a></li>
+
+                  </ul>          
+              </div>
       <TableTransactionsInner
       fullTransactionsData={fullTransactionsData}
       currentTransactions={currentTransactions}
@@ -210,14 +393,24 @@ const filteredTransactions = transactionsData.filter((transaction) => {
       processingFeeTextSearchText={processingFeeTextSearchText}
       discountSearchText={discountSearchText}
       transAmountSearchText={transAmountSearchText}
+      transAmountStartNumber = {transAmountStartNumber}
+      transAmountEndNumber = {transAmountEndNumber}
       totalAmountSearchText={totalAmountSearchText}
+      totalAmountStartNumber={totalAmountStartNumber}
+      totalAmountEndNumber={totalAmountEndNumber}
       tipSearchText={tipSearchText}
+      tipStartNumber = {tipStartNumber}
+      tipEndNumber = {tipEndNumber}
       notesSearchText={notesSearchText}
       vehicleTypeSearchText={vehicleTypeSearchText}
       paymentSearchText={paymentSearchText}
       senderPaySearchText={senderPaySearchText}
       statusSearchText={statusSearchText}
       createdAtSearchText={createdAtSearchText}
+      createdAtFromDate={createdAtFromDate}
+      createdAtToDate={createdAtToDate}
+      updatedAtFromDate={updatedAtFromDate}
+      updatedAtToDate={updatedAtToDate}
       updatedAtSearchText={updatedAtSearchText}
       customerNameSearchText={customerNameSearchText}
       riderEarnedSearchText={riderEarnedSearchText}
@@ -238,15 +431,25 @@ const filteredTransactions = transactionsData.filter((transaction) => {
       setProcessingFeeSearchText={setProcessingFeeSearchText}
       setDiscountSearchText={setDiscountSearchText}
       setTransAmountSearchText={setTransAmountSearchText}
+      setTransAmountStartNumber={setTransAmountStartNumber}
+      setTransAmountEndNumber={setTransAmountEndNumber}
       setTotalAmountSearchText={setTotalAmountSearchText}
+      setTotalAmountStartNumber={setTotalAmountStartNumber}
+      setTotalAmountEndNumber={setTotalAmountEndNumber}
       setTipSearchText={setTipSearchText}
+      setTipStartNumber={setTipStartNumber}
+      setTipEndNumber={setTipEndNumber}
       setNotesSearchText={setNotesSearchText}
       setVehicleTypeSearchText={setVehicleTypeSearchText}
       setPaymentSearchText={setPaymentSearchText}
       setSenderPaySearchText={setSenderPaySearchText}
       setStatusSearchText={setStatusSearchText}
       setCreatedAtSearchText={setCreatedAtSearchText}
+      setCreatedAtFromDate={setCreatedAtFromDate}
+      setCreatedAtToDate={setCreatedAtToDate}
       setUpdatedAtSearchText={setUpdatedAtSearchText}
+      setUpdatedAtFromDate={setUpdatedAtFromDate}
+      setUpdatedAtToDate={setUpdatedAtToDate}
       setCustomerNameSearchText={setCustomerNameSearchText}
       setRiderEarnedSearchText={setRiderEarnedSearchText}
       setRapidooEarnedSearchText={setRapidooEarnedSearchText}

@@ -1,5 +1,9 @@
 import React, { useState } from 'react'
 import TextModal from '../Modal/TextModal';
+import Datetime from 'react-datetime';
+import "react-datetime/css/react-datetime.css";
+import NumberRangeModal from '../Modal/NumberRange';
+import ImageModal from '../Modal/ImageModal';
 
 interface Transaction {
     id: number;
@@ -50,15 +54,25 @@ interface Transaction {
     processingFeeTextSearchText: string;
     discountSearchText: string;
     transAmountSearchText: string;
+    transAmountStartNumber: number | undefined;
+    transAmountEndNumber: number | undefined;
     totalAmountSearchText: string;
+    totalAmountStartNumber: number | undefined;
+    totalAmountEndNumber: number | undefined;
     tipSearchText: string;
+    tipStartNumber: number | undefined;
+    tipEndNumber: number | undefined;
     notesSearchText: string;
     vehicleTypeSearchText: string;
     paymentSearchText: string;
     senderPaySearchText: string;
     statusSearchText: string;
     createdAtSearchText: string;
+    createdAtFromDate: string;
+    createdAtToDate: string;
     updatedAtSearchText: string;
+    updatedAtFromDate: string;
+    updatedAtToDate: string
     customerNameSearchText: string;
     riderEarnedSearchText: string;
     rapidooEarnedSearchText: string;
@@ -78,15 +92,25 @@ interface Transaction {
     setProcessingFeeSearchText: React.Dispatch<React.SetStateAction<string>>;
     setDiscountSearchText: React.Dispatch<React.SetStateAction<string>>;
     setTransAmountSearchText: React.Dispatch<React.SetStateAction<string>>;
+    setTransAmountStartNumber: React.Dispatch<React.SetStateAction<number| undefined>>;
+    setTransAmountEndNumber: React.Dispatch<React.SetStateAction<number| undefined>>;
     setTotalAmountSearchText: React.Dispatch<React.SetStateAction<string>>;
+    setTotalAmountStartNumber: React.Dispatch<React.SetStateAction<number| undefined>>;
+    setTotalAmountEndNumber: React.Dispatch<React.SetStateAction<number| undefined>>;
     setTipSearchText: React.Dispatch<React.SetStateAction<string>>;
+    setTipStartNumber: React.Dispatch<React.SetStateAction<number| undefined>>;
+    setTipEndNumber: React.Dispatch<React.SetStateAction<number| undefined>>;
     setNotesSearchText: React.Dispatch<React.SetStateAction<string>>;
     setVehicleTypeSearchText: React.Dispatch<React.SetStateAction<string>>;
     setPaymentSearchText: React.Dispatch<React.SetStateAction<string>>;
     setSenderPaySearchText: React.Dispatch<React.SetStateAction<string>>;
     setStatusSearchText: React.Dispatch<React.SetStateAction<string>>;
     setCreatedAtSearchText: React.Dispatch<React.SetStateAction<string>>;
+    setCreatedAtFromDate: React.Dispatch<React.SetStateAction<string>>;
+    setCreatedAtToDate: React.Dispatch<React.SetStateAction<string>>;
     setUpdatedAtSearchText: React.Dispatch<React.SetStateAction<string>>;
+    setUpdatedAtFromDate: React.Dispatch<React.SetStateAction<string>>;
+    setUpdatedAtToDate: React.Dispatch<React.SetStateAction<string>>;
     setCustomerNameSearchText: React.Dispatch<React.SetStateAction<string>>;
     setRiderEarnedSearchText: React.Dispatch<React.SetStateAction<string>>;
     setRapidooEarnedSearchText: React.Dispatch<React.SetStateAction<string>>;
@@ -111,15 +135,25 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
     processingFeeTextSearchText,
     discountSearchText,
     transAmountSearchText,
+    transAmountStartNumber,
+    transAmountEndNumber,
     totalAmountSearchText,
+    totalAmountStartNumber,
+    totalAmountEndNumber,
     tipSearchText,
+    tipStartNumber,
+    tipEndNumber,
     notesSearchText,
     vehicleTypeSearchText,
     paymentSearchText,
     senderPaySearchText,
     statusSearchText,
     createdAtSearchText,
+    createdAtFromDate,
+    createdAtToDate,
     updatedAtSearchText,
+    updatedAtFromDate,
+    updatedAtToDate,
     customerNameSearchText,
     riderEarnedSearchText,
     rapidooEarnedSearchText,
@@ -139,15 +173,25 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
     setProcessingFeeSearchText,
     setDiscountSearchText,
     setTransAmountSearchText,
+    setTransAmountStartNumber,
+    setTransAmountEndNumber,
     setTotalAmountSearchText,
+    setTotalAmountStartNumber,
+    setTotalAmountEndNumber,
     setTipSearchText,
+    setTipStartNumber,
+    setTipEndNumber,
     setNotesSearchText,
     setVehicleTypeSearchText,
     setPaymentSearchText,
     setSenderPaySearchText,
     setStatusSearchText,
     setCreatedAtSearchText,
+    setCreatedAtFromDate,
+    setCreatedAtToDate,
     setUpdatedAtSearchText,
+    setUpdatedAtFromDate,
+    setUpdatedAtToDate,
     setCustomerNameSearchText,
     setRiderEarnedSearchText,
     setRapidooEarnedSearchText,
@@ -155,16 +199,30 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
     setOgDropoffAdrSearchText
 }) => {
 
+    const [showNumberRangeModal, setShowNumberRangeModal] = useState("")
     const [showTextModal, setShowTextModal] = useState<number | null>(null);
+    const [showImageModal, setShowImageModal] = useState<number | null>(null);
+
     const uniquePaymentMethods = Array.from(
         new Set(fullTransactionsData.map(transaction => transaction.payment_method))
       );
-      const allVehicleTypes = Array.from(
+
+    const allVehicleTypes = Array.from(
         new Set(fullTransactionsData.map(transaction => transaction.vehicle_type))
       );
-      const allSenderPaymentTypes = Array.from(
+
+    const allSenderPaymentTypes = Array.from(
         new Set(fullTransactionsData.map(transaction => transaction.sender_payment))
       );
+    
+      const allMultipleDropoff = Array.from(
+        new Set(fullTransactionsData.map(transaction => transaction.multiple_dropoff))
+      );
+
+      const allStatus = Array.from(
+        new Set(fullTransactionsData.map(transaction => transaction.status))
+      );
+
 
 
     const extractPickupDetails = (input: string) => {
@@ -240,14 +298,17 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
         const latitude = dropoffDetails.latitude;
         const longitude = dropoffDetails.longitude;
         const isMultipleDrop = dropoffDetails.isMultipleDrop;
+        const dropoff_image = dropoffDetails.dropoff_image?.replace('-accelerate', '');
       
         // If multiple_dropoff is 0, format the details for a single drop-off
         if (!multiple_dropoff) {
+          
           return `
             Description: ${description},
             Address: ${address},
             Latitude: ${latitude},
-            Longitude: ${longitude}
+            Longitude: ${longitude},
+            DropOff Image: ${dropoff_image?.replace('-accelerate', '')}
           `.trim();
         }
         
@@ -256,7 +317,7 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
           // Parse the multiple drop-offs details from the string
           const multipleDropoffs = JSON.parse(isMultipleDrop);
           
-          let result = `Description: ${description},\nAddress: ${address},\nLatitude: ${latitude},\nLongitude: ${longitude}\n\nMultiple Drop-offs:\n`;
+          let result = `Description: ${description},\nAddress: ${address},\nLatitude: ${latitude},\nLongitude: ${longitude}, \n Dropoff Image: ${dropoff_image} \n\nMultiple Drop-offs:\n`;
           
           // Iterate through each multiple drop-off and format its details
           multipleDropoffs.forEach((dropoff: any) => {
@@ -268,7 +329,8 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
               Longitude: ${dropoff.multipleLongitude},
               Contact Name: ${dropoff.multipleCName || "N/A"},
               Contact Number: ${dropoff.multipleCNumber || "N/A"},
-              Status: ${dropoff.status}\n
+              Status: ${dropoff.status}
+              Dropoff Image: ${dropoff.dropoff_image?.replace('-accelerate', '')}
             `;
           });
           
@@ -283,11 +345,19 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
           transaction.account_id.toString().toLowerCase().includes(accountIDSearchText.toLowerCase());
       });
 
+      const handleDate = (date: any) => {
+
+        return date.format('YYYY-MM-DD');
+
+      };
+
 
     //   Search Filters
       const filteredCustomers = currentTransactions.filter((transaction) => {
-    const matchesSearchText =
-      transaction.account_id.toString().toLowerCase().includes(accountIDSearchText.toLowerCase());
+        const matchesSearchText =
+          transaction.account_id.toString().toLowerCase().includes(accountIDSearchText.toLowerCase());
+
+
 
       return matchesSearchText
   });
@@ -384,163 +454,196 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
 
       </tr>
       <tr className="bg-gray-400 text-black-2">
-      <th className="align-bottom  border-black-2">
+      <th className="align-middle  border-black-2">
               <input
                 type="text"
                 placeholder="Account ID"
                 value={accountIDSearchText}
                 onChange={(e) => setAccountIDSearchText(e.target.value)}
-                className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+                className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
               />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Rider Account ID"
             value={riderAccountIDSearchText}
             onChange={(e) => setRiderAccountIDSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Reference ID"
             value={refIDSearchText}
             onChange={(e) => setRefIDSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Coupon"
             value={couponSearchText}
             onChange={(e) => setCouponSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Distance"
             value={distanceSearchText}
             onChange={(e) => setDistanceSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Sender Details"
             value={senderSearchText}
             onChange={(e) => setSenderSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Reciever Details"
             value={recieverSearchText}
             onChange={(e) => setRecieverSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Pickup Address"
             value={pickupadrSearchText}
             onChange={(e) => setPickupAdrSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Dropoff Address"
             value={dropoffadrSearchText}
             onChange={(e) => setDropoffAdrSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
-            type="text"
-            placeholder="Multiple Dropoff"
-            value={multiDropSearchText}
-            onChange={(e) => setMultiDropAdrSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+        <th className="align-middle  border-black-2">
+        <div className="dropdown">
+                <div tabIndex={0} role="button" className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2">
+                {multiDropSearchText === "" && "All Dropoffs"}
+                {multiDropSearchText === "0" && "Single Dropoffs"}
+                {multiDropSearchText === "1" && "Multiple Dropoffs"}
+                </div>
+                <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                <li><a onClick={() => setMultiDropAdrSearchText("")}>All Dropoffs</a></li>
+                  
+                  <li><a onClick={() => {setMultiDropAdrSearchText("0") }}>
+                    Single Dropoffs
+                    </a></li>
+                    <li><a onClick={() => {setMultiDropAdrSearchText("1") }}>
+                    Multiple Dropoffs
+                    </a></li>
+                  
+
+                  </ul>          
+              </div>
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Rebate"
             value={rebateSearchText}
             onChange={(e) => setRebateSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Processing Fee"
             value={processingFeeTextSearchText}
             onChange={(e) => setProcessingFeeSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Discount"
             value={discountSearchText}
             onChange={(e) => setDiscountSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
-            type="text"
-            placeholder="Transaction Amount"
-            value={transAmountSearchText}
-            onChange={(e) => setTransAmountSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+        <th className="align-middle  border-black-2">
+        <div tabIndex={0} 
+                    role="button"  
+                    onClick={() => setShowNumberRangeModal("Transaction")} 
+                    className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2" >
+                {transAmountStartNumber == null  ? "All Transactions" : <span>{transAmountStartNumber} - {transAmountEndNumber}</span>}
+              </div>
+              {showNumberRangeModal === "Transaction" && 
+              <NumberRangeModal 
+              setShowNumberRangeModal={setShowNumberRangeModal} 
+              startingNumber={transAmountStartNumber}
+              endingNumber={transAmountEndNumber}
+              setStartingNumber={setTransAmountStartNumber}
+              setEndingNumber={setTransAmountEndNumber}
+              />}
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
-            type="text"
-            placeholder="Total Amount"
-            value={totalAmountSearchText}
-            onChange={(e) => setTotalAmountSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+        <th className="align-middle  border-black-2">
+              <div tabIndex={0} 
+                    role="button"  
+                    onClick={() => setShowNumberRangeModal("Total Amount")} 
+                    className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2" >
+                {totalAmountStartNumber == null  ? "All Total Amount" : <span>{totalAmountStartNumber} - {totalAmountEndNumber}</span>}
+              </div>
+              {showNumberRangeModal === "Total Amount" &&
+              <NumberRangeModal 
+              setShowNumberRangeModal={setShowNumberRangeModal} 
+              startingNumber={totalAmountStartNumber}
+              endingNumber={totalAmountEndNumber}
+              setStartingNumber={setTotalAmountStartNumber}
+              setEndingNumber={setTotalAmountEndNumber}
+              />}
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
-            type="text"
-            placeholder="Tip"
-            value={tipSearchText}
-            onChange={(e) => setTipSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+        <th className="align-middle  border-black-2">
+        <div tabIndex={0} 
+                    role="button"  
+                    onClick={() => setShowNumberRangeModal("Tips")} 
+                    className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2" >
+                {tipStartNumber == null  ? "All Tip Amounts" : <span>{tipStartNumber} - {tipEndNumber}</span>}
+              </div>
+              {showNumberRangeModal === "Tips" && 
+              <NumberRangeModal 
+              setShowNumberRangeModal={setShowNumberRangeModal} 
+              startingNumber={tipStartNumber}
+              endingNumber={tipEndNumber}
+              setStartingNumber={setTipStartNumber}
+              setEndingNumber={setTipEndNumber}
+              />}
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Notes"
             value={notesSearchText}
             onChange={(e) => setNotesSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
-        <div className="dropdown pt-6">
+        <th className="align-middle  border-black-2">
+        <div className="dropdown">
                 <div tabIndex={0} role="button" className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2">
-                {paymentSearchText === "" ? "All Vehicles" : <span>{vehicleTypeSearchText}</span>}
+                {vehicleTypeSearchText === "" ? "All Vehicles" : <span>{vehicleTypeSearchText}</span>}
                 </div>
                 <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
                 <li><a onClick={() => setVehicleTypeSearchText("")}>All Vehicles</a></li>
@@ -554,9 +657,9 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
                   </ul>          
               </div>
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
 
-            <div className="dropdown pt-6">
+            <div className="dropdown">
                 <div tabIndex={0} role="button" className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2">
                 {paymentSearchText === "" ? "All Payment Methods" : <span>{paymentSearchText}</span>}
                 </div>
@@ -572,11 +675,11 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
                   </ul>          
               </div>
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
 
-            <div className="dropdown pt-6">
+            <div className="dropdown">
                 <div tabIndex={0} role="button" className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2">
-                {paymentSearchText === "" ? "All Sender Payments" : <span>{senderPaySearchText}</span>}
+                {senderPaySearchText === "" ? "All Sender Payments" : <span>{senderPaySearchText}</span>}
                 </div>
                 <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
                 <li><a onClick={() => setSenderPaySearchText("")}>All Sender Payments</a></li>
@@ -590,76 +693,153 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
                   </ul>          
               </div>
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
-            type="text"
-            placeholder="Status"
-            value={statusSearchText}
-            onChange={(e) => setStatusSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+        <th className="align-middle  border-black-2">
+        <div className="dropdown">
+                <div tabIndex={0} role="button" className="btn m-1 w-35 h-10 bg-gray-300 border-2 border-black-2">
+                {statusSearchText === "" ? "All Status" : <span>{statusSearchText}</span>}
+                </div>
+                <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                <li><a onClick={() => setStatusSearchText("")}>All Status</a></li>
+
+                {allStatus.map((status, key) => (
+                  
+                  <li><a onClick={() => {setStatusSearchText(status) }}>
+                    {status}
+                    </a></li>
+                  
+                  ))}
+                  </ul>          
+              </div>
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
+        <th className="align-middle  border-black-2">
+            {/* <input
             type="text"
             placeholder="Created At"
             value={createdAtSearchText}
             onChange={(e) => setCreatedAtSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
+            /> */}
+            From Date
+            <Datetime 
+            value={createdAtFromDate} 
+            initialValue={"YYYY-MM-DD"} 
+            onChange={(e) => setCreatedAtFromDate(handleDate(e))} 
+            timeFormat={false} 
+            inputProps={{ readOnly: true, value: createdAtFromDate, placeholder: "YYYY-MM-DD", 
+            style: 
+            { width: '135px',
+            height: '46px', 
+            fontSize: '16px', 
+            borderRadius: '5px',
+            border: `2px solid black`  
+            // border: `2px solid ${validDate ? 'red' : 'black'}` 
+            } }} 
+            className="border-black-2"/>
+
+            To Date
+            <Datetime 
+            value={createdAtToDate} 
+            initialValue={"YYYY-MM-DD"} 
+            onChange={(e) => setCreatedAtToDate(handleDate(e))} 
+            timeFormat={false} 
+            inputProps={{ readOnly: true, value: createdAtToDate, placeholder: "YYYY-MM-DD", 
+            style: 
+            { width: '135px', 
+            height: '46px', 
+            fontSize: '16px', 
+            borderRadius: '5px',
+            border: `2px solid black` 
+            // border: `2px solid ${validDate ? 'red' : 'black'}` 
+            } }} 
+            className="border-black-2"/>  
+
         </th>
-        <th className="align-bottom  border-black-2">
-            <input
+        <th className="align-middle  border-black-2">
+            {/* <input
             type="text"
             placeholder="Updated At"
             value={updatedAtSearchText}
             onChange={(e) => setUpdatedAtSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
-            />
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
+            /> */}
+
+            From Date
+            <Datetime 
+            value={updatedAtFromDate} 
+            initialValue={"YYYY-MM-DD"} 
+            onChange={(e) => setUpdatedAtFromDate(handleDate(e))} 
+            timeFormat={false} 
+            inputProps={{ readOnly: true, value: updatedAtFromDate, placeholder: "YYYY-MM-DD", 
+            style: 
+            { width: '135px', 
+            height: '46px', 
+            fontSize: '16px', 
+            borderRadius: '5px',
+            border: `2px solid black`  
+            // border: `2px solid ${validDate ? 'red' : 'black'}` 
+            } }} 
+            className="border-black-2"/>
+
+            To Date
+            <Datetime 
+            value={updatedAtToDate} 
+            initialValue={"YYYY-MM-DD"} 
+            onChange={(e) => setUpdatedAtToDate(handleDate(e))} 
+            timeFormat={false} 
+            inputProps={{ readOnly: true, value: updatedAtToDate, placeholder: "YYYY-MM-DD", 
+            style: 
+            { width: '135px', 
+            height: '46px', 
+            fontSize: '16px', 
+            borderRadius: '5px',
+            border: `2px solid black` 
+            // border: `2px solid ${validDate ? 'red' : 'black'}` 
+            } }} 
+            className="border-black-2"/>  
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Customer Name"
             value={customerNameSearchText}
             onChange={(e) => setCustomerNameSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Rider Earned"
             value={riderEarnedSearchText}
             onChange={(e) => setRiderEarnedSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Rapidoo Earned"
             value={rapidooEarnedSearchText}
             onChange={(e) => setRapidooEarnedSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Original Pickup Address"
             value={ogPickupAdrSearchText}
             onChange={(e) => setOgPickupAdrSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
-        <th className="align-bottom  border-black-2">
+        <th className="align-middle  border-black-2">
             <input
             type="text"
             placeholder="Original Dropoff Address"
             value={ogDropoffAdrSearchText}
             onChange={(e) => setOgDropoffAdrSearchText(e.target.value)}
-            className="p-4 m-1 w-25 h-12 rounded-md border-2 border-black-2"
+            className="p-4 m-1 w-35 h-12 rounded-md border-2 border-black-2"
             />
         </th>
       </tr>
