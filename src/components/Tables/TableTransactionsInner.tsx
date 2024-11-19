@@ -40,6 +40,7 @@ interface Transaction {
   interface TableTransactionsInnerProps {
     fullTransactionsData: Transaction[];
     currentTransactions: Transaction[];
+    sortConfig: { key: keyof Transaction; direction: 'asc' | 'desc' } | null;
     accountIDSearchText: string;
     riderAccountIDSearchText: string;
     refIDSearchText: string;
@@ -78,6 +79,7 @@ interface Transaction {
     rapidooEarnedSearchText: string;
     ogPickupAdrSearchText: string;
     ogDropoffAdrSearchText: string;
+    handleSort: (key: keyof Transaction) => void;
     setAccountIDSearchText: React.Dispatch<React.SetStateAction<string>>;
     setRiderAccountIDSearchText: React.Dispatch<React.SetStateAction<string>>;
     setRefIDSearchText: React.Dispatch<React.SetStateAction<string>>;
@@ -121,6 +123,7 @@ interface Transaction {
 const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
     fullTransactionsData, 
     currentTransactions,
+    sortConfig,
     accountIDSearchText,
     riderAccountIDSearchText,
     refIDSearchText,
@@ -159,6 +162,7 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
     rapidooEarnedSearchText,
     ogPickupAdrSearchText,
     ogDropoffAdrSearchText,
+    handleSort,
     setAccountIDSearchText,
     setRiderAccountIDSearchText,
     setRefIDSearchText,
@@ -225,120 +229,82 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
 
 
 
-    const extractPickupDetails = (input: string) => {
-        // Match the content within the "pickup" object
-        const pickupRegex = /"pickup":\s*{([^}]*)}/;
-        const match = input.match(pickupRegex);
-        
-        if (match) {
-          // Capture only the key-value pairs inside "pickup"
-          const innerContent = match[1];
-      
-          // Extract the "description", "address", "latitude", and "longitude" values
-          const descriptionMatch = innerContent.match(/"description":\s*"([^"]*)"/);
-          const addressMatch = innerContent.match(/"address":\s*"([^"]*)"/);
-          const latitudeMatch = innerContent.match(/"latitude":\s*([\d.]+)/);
-          const longitudeMatch = innerContent.match(/"longitude":\s*([\d.]+)/);
-      
-          // Format the extracted values
-          const description = descriptionMatch ? descriptionMatch[1] : '';
-          const address = addressMatch ? addressMatch[1] : '';
-          const latitude = latitudeMatch ? latitudeMatch[1] : '';
-          const longitude = longitudeMatch ? longitudeMatch[1] : '';
-      
-          return `${description},\n${address},\nlatitude: ${latitude},\nlongitude: ${longitude}`;
+      const extractPickupDetails = (input: string) => {
+        try {
+            const parsedInput = JSON.parse(input);
+            const pickup = parsedInput.pickup;
+    
+            // Safely access properties with default fallbacks
+            const description = pickup?.description || '';
+            const address = pickup?.address || '';
+            const latitude = pickup?.latitude || '';
+            const longitude = pickup?.longitude || '';
+            const image = pickup?.pickup_image?.replace('-accelerate', '') || '';
+    
+            return `
+              ${description},
+              ${address},
+              latitude: ${latitude},
+              longitude: ${longitude},
+              image: ${image}
+            `.trim();
+        } catch (error) {
+            console.error("Error parsing input JSON:", error);
+            return '';
         }
-      
-        return '';
+    };
+
+    const extractPickupImage = (input: string) => {
+      const parsedInput = JSON.parse(input);
+      const pickup = parsedInput.pickup;
+  
+      // Check if pickup exists and if pickup_image is defined
+      if (!pickup || !pickup.pickup_image) {
+          return 'missing image';
       }
+
+      const image_link = pickup.pickup_image?.replace('-accelerate', '');
+      console.log(image_link)
+  
+      // Replace '-accelerate' if pickup_image exists
+      return image_link;
+  };
+  
     
-      const extractSenderDetails = (input: string) => {
-          // Match sender details
-          const senderNameMatch = input.match(/"sender_name":\s*"([^"]*)"/);
-          const senderPhoneMatch = input.match(/"sender_phonenumber":\s*(\d+)/);
+    const extractSenderDetails = (input: string) => {
+        try {
+            const parsedInput = JSON.parse(input);
     
-          // Extract sender details or use default empty string if not found
-          const senderName = senderNameMatch ? senderNameMatch[1] : '';
-          const senderPhone = senderPhoneMatch ? senderPhoneMatch[1] : '';
+            // Extract sender details
+            const senderName = parsedInput?.sender_name || '';
+            const senderPhone = parsedInput?.sender_phonenumber || '';
     
-          // Match receiver details
-          const receiverNameMatch = input.match(/"receiver_name":\s*"([^"]*)"/);
-          const receiverPhoneMatch = input.match(/"receiver_phonenumber":\s*(\d+)/);
+            // Extract receiver details
+            const receiverName = parsedInput?.receiver_name || '';
+            const receiverPhone = parsedInput?.receiver_phonenumber || '';
     
-          // Extract receiver details or use default empty string if not found
-          const receiverName = receiverNameMatch ? receiverNameMatch[1] : '';
-          const receiverPhone = receiverPhoneMatch ? receiverPhoneMatch[1] : '';
+            // If both sender and receiver are missing details, return a message
+            if (!senderName && !senderPhone && !receiverName && !receiverPhone) {
+                return 'Sender and Receiver details are missing.';
+            }
     
-          // If both sender and receiver are missing details, return a message
-          if ((!senderName && !senderPhone) && (!receiverName && !receiverPhone)) {
-            return 'Sender and Receiver details are missing.';
-          }
+            // Format the extracted details
+            let result = '';
+            if (senderName || senderPhone) {
+                result += `${senderName},\n${senderPhone}\n`;
+            }
+            if (receiverName || receiverPhone) {
+                result += `${receiverName},\n${receiverPhone}\n`;
+            }
     
-          // Format the extracted details
-          let result = '';
-          
-          if (senderName || senderPhone) {
-            result += `${senderName},\n${senderPhone}\n`;
-          } else {
-          }
-    
-          if (receiverName || receiverPhone) {
-            result += `${receiverName},\n${receiverPhone}\n`;
-          } else {
-          }
-    
-          return result.trim();
-      }
-    
-      const extractDropoffDetails = (dropoff_details: string, multiple_dropoff: boolean) => {
-        const dropoffDetails = JSON.parse(dropoff_details).dropoff;
-        
-        const description = dropoffDetails.description;
-        const address = dropoffDetails.address;
-        const latitude = dropoffDetails.latitude;
-        const longitude = dropoffDetails.longitude;
-        const isMultipleDrop = dropoffDetails.isMultipleDrop;
-        const dropoff_image = dropoffDetails.dropoff_image?.replace('-accelerate', '');
-      
-        // If multiple_dropoff is 0, format the details for a single drop-off
-        if (!multiple_dropoff) {
-          
-          return `
-            Description: ${description},
-            Address: ${address},
-            Latitude: ${latitude},
-            Longitude: ${longitude},
-            DropOff Image: ${dropoff_image?.replace('-accelerate', '')}
-          `.trim();
+            return result.trim();
+        } catch (error) {
+            console.error("Error parsing input JSON:", error);
+            return 'Invalid input JSON';
         }
-        
-        // If multiple_dropoff is 1, format the details for multiple drop-offs
-        if (multiple_dropoff) {
-          // Parse the multiple drop-offs details from the string
-          const multipleDropoffs = JSON.parse(isMultipleDrop);
-          
-          let result = `Description: ${description},\nAddress: ${address},\nLatitude: ${latitude},\nLongitude: ${longitude}, \n Dropoff Image: ${dropoff_image} \n\nMultiple Drop-offs:\n`;
-          
-          // Iterate through each multiple drop-off and format its details
-          multipleDropoffs.forEach((dropoff: any) => {
-            result += `
-              ID: ${dropoff.id},
-              Name: ${dropoff.multipleName},
-              Address: ${dropoff.multipleAddress},
-              Latitude: ${dropoff.multipleLatitude},
-              Longitude: ${dropoff.multipleLongitude},
-              Contact Name: ${dropoff.multipleCName || "N/A"},
-              Contact Number: ${dropoff.multipleCNumber || "N/A"},
-              Status: ${dropoff.status}
-              Dropoff Image: ${dropoff.dropoff_image?.replace('-accelerate', '')}
-            `;
-          });
-          
-          return result.trim();
-        }
-        
-        return 'Invalid multiple_dropoff value';
-      }
+    };
+    
+
 
       const filteredTransactions = currentTransactions.filter((transaction) => {
         const matchesAccountID =
@@ -367,89 +333,171 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
     <table className="table dark:bg-black-2 bg-white rounded-none border border-black-2 ">
     <thead>
         <tr className="bg-gray-400 text-black-2">
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Account ID</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('account_id')}>
+          <h5 className="text-m font-medium uppercase">
+          Account ID 
+          {sortConfig?.key === 'account_id' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+          </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Rider Account ID</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('rider_account_id')}>
+          <h5 className="text-m font-medium uppercase">
+            Rider Account ID
+            {sortConfig?.key === 'rider_account_id' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Reference ID</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('reference_id')}>
+          <h5 className="text-m font-medium uppercase">
+            Reference ID
+            {sortConfig?.key === 'reference_id' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Coupon</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('coupon')}>
+          <h5 className="text-m font-medium uppercase">
+            Coupon
+            {sortConfig?.key === 'coupon' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Distance</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('distance')}>
+          <h5 className="text-m font-medium uppercase">
+            Distance
+            {sortConfig?.key === 'distance' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Sender Details</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('sender_details')}>
+          <h5 className="text-m font-medium uppercase">
+            Sender Details
+            {sortConfig?.key === 'sender_details' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Reciever Details</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('receiver_details')}>
+          <h5 className="text-m font-medium uppercase">
+            Reciever Details
+            {sortConfig?.key === 'receiver_details' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Pickup Address</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('pickup_address')}>
+          <h5 className="text-m font-medium uppercase">
+            Pickup Address
+            {sortConfig?.key === 'pickup_address' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Dropoff Address</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('dropoff_address')}>
+          <h5 className="text-m font-medium uppercase">
+            Dropoff Address
+            {sortConfig?.key === 'dropoff_address' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Multiple Dropoff</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('multiple_dropoff')}>
+          <h5 className="text-m font-medium uppercase">
+            Multiple Dropoff
+            {sortConfig?.key === 'multiple_dropoff' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Rebate</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('rebate')}>
+          <h5 className="text-m font-medium uppercase">
+            Rebate
+            {sortConfig?.key === 'rebate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Processing Fee</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('processing_fee')}>
+          <h5 className="text-m font-medium uppercase">
+            Processing Fee
+            {sortConfig?.key === 'processing_fee' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</h5>
+
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Discount</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('discount')}>
+          <h5 className="text-m font-medium uppercase">
+            Discount
+            {sortConfig?.key === 'discount' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Transaction Amount</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('transaction_amount')}>
+          <h5 className="text-m font-medium uppercase">
+            Transaction Amount
+            {sortConfig?.key === 'transaction_amount' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Total Amount</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('total_amount')}>
+          <h5 className="text-m font-medium uppercase">
+            Total Amount
+            {sortConfig?.key === 'total_amount' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Tip</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('tip')}>
+          <h5 className="text-m font-medium uppercase">
+            Tip
+            {sortConfig?.key === 'tip' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Notes</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('notes')}>
+          <h5 className="text-m font-medium uppercase">
+            Notes
+            {sortConfig?.key === 'notes' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Vehicle Type</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('vehicle_type')}>
+          <h5 className="text-m font-medium uppercase">
+            Vehicle Type
+            {sortConfig?.key === 'vehicle_type' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Payment Method</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('payment_method')}>
+          <h5 className="text-m font-medium uppercase">
+            Payment Method
+            {sortConfig?.key === 'payment_method' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Sender Payment</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('sender_payment')}>
+          <h5 className="text-m font-medium uppercase">
+            Sender Payment
+            {sortConfig?.key === 'sender_payment' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Status</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('status')}>
+          <h5 className="text-m font-medium uppercase">
+            Status
+            {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Created At</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('created_at')}>
+          <h5 className="text-m font-medium uppercase">
+            Created At
+            {sortConfig?.key === 'created_at' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Updated At</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('updated_at')}>
+          <h5 className="text-m font-medium uppercase">
+            Updated At
+            {sortConfig?.key === 'updated_at' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Customer Name</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('customer_name')}>
+          <h5 className="text-m font-medium uppercase">
+            Customer Name
+            {sortConfig?.key === 'customer_name' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Rider Earned</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('rider_earned')}>
+          <h5 className="text-m font-medium uppercase">
+            Rider Earned
+            {sortConfig?.key === 'rider_earned' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Rapidoo Earned</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('rapidoo_earned')}>
+          <h5 className="text-m font-medium uppercase">
+            Rapidoo Earned
+            {sortConfig?.key === 'rapidoo_earned' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Original Pickup Address</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('original_pickup_address')}>
+          <h5 className="text-m font-medium uppercase">
+            Original Pickup Address
+            {sortConfig?.key === 'original_pickup_address' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
-        <th className="text-center truncate whitespace-normal p-2">
-          <h5 className="text-m font-medium uppercase">Original Dropoff Address</h5>
+        <th className="text-center truncate whitespace-normal p-2" onClick={() => handleSort('original_dropoff_address')}>
+          <h5 className="text-m font-medium uppercase">
+            Original Dropoff Address
+            {sortConfig?.key === 'original_dropoff_address' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+            </h5>
         </th>
 
       </tr>
@@ -873,11 +921,14 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
           </td>
           <td className=" items-center justify-center text-center truncate whitespace-normal p-2">
             {extractPickupDetails(transaction.pickup_address)}
+
+            <button className="btn btn-sm border border-black-2" onClick={() => setShowImageModal(transaction.id)}>View Pickup Image</button>
+            {showImageModal === transaction.id && <ImageModal showImageModal={setShowImageModal} image_dir={extractPickupImage(transaction.pickup_address)} /> }
           </td>
           <td className=" items-center justify-center text-center truncate whitespace-normal p-2">
           <button className="btn btn-sm border border-black-2" 
               onClick={() => setShowTextModal(transaction.id)}>Show Details</button>
-            {showTextModal === transaction.id && <TextModal text={extractDropoffDetails(transaction.dropoff_address, transaction.multiple_dropoff)} setShowTextModal={setShowTextModal} />}
+            {showTextModal === transaction.id && <TextModal text={transaction.dropoff_address} is_multiple={transaction.multiple_dropoff} setShowTextModal={setShowTextModal} />}
           </td>
           <td className=" items-center justify-center text-center truncate whitespace-normal p-2">
             {transaction.multiple_dropoff}
@@ -930,12 +981,49 @@ const TableTransactionsInner: React.FC<TableTransactionsInnerProps> = ({
           <td className=" items-center justify-center text-center truncate whitespace-normal p-2">
             {transaction.rapidoo_earned}
           </td>
-          <td className=" items-center justify-center text-center truncate whitespace-normal p-2">
-            {transaction.original_pickup_address}
-          </td>
-          <td className=" items-center justify-center text-center truncate whitespace-normal p-2">
-            {transaction.original_dropoff_address}
-          </td>
+          <td className="items-center justify-center text-center truncate whitespace-normal p-2">
+  {transaction.original_pickup_address ? (
+    <>
+      {extractPickupDetails(transaction.original_pickup_address)}
+
+      <button
+        className="btn btn-sm border border-black-2"
+        onClick={() => setShowImageModal(key)}
+      >
+        View Pickup Image
+      </button>
+      {showImageModal === key && (
+        <ImageModal
+          showImageModal={setShowImageModal}
+          image_dir={extractPickupImage(transaction.original_pickup_address)}
+        />
+      )}
+    </>
+  ) : (
+    <span>Missing Details</span>
+  )}
+</td>
+<td className="items-center justify-center text-center truncate whitespace-normal p-2">
+  {transaction.original_dropoff_address ? (
+    <>
+      <button
+        className="btn btn-sm border border-black-2"
+        onClick={() => setShowTextModal(key)}
+      >
+        Show Details
+      </button>
+      {showTextModal === key && (
+        <TextModal
+          text={transaction.original_dropoff_address}
+          is_multiple={transaction.multiple_dropoff}
+          setShowTextModal={setShowTextModal}
+        />
+      )}
+    </>
+  ) : (
+    <span>Missing Details</span>
+  )}
+</td>
           
         </tr>
       ))}

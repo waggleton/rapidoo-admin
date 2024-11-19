@@ -42,6 +42,7 @@ const TableTransactions = () => {
 
   const [transactionsData, setTransactionsData] = useState<Transaction[]>([]); // Initialize as an empty array
   const [fullTransactionsData, setFullTransactionsData] = useState<Transaction[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: 'asc' | 'desc' } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);  // for pagination
@@ -110,6 +111,22 @@ const parseDate = (dateStr: string): Date => {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 };
 
+const handleSort = (key: keyof Transaction) => {
+  setSortConfig((prevConfig) => {
+    if (prevConfig && prevConfig.key === key) {
+      // Toggle sort direction
+      return {
+        key,
+        direction: prevConfig.direction === 'asc' ? 'desc' : 'asc',
+      };
+    }
+    // Set new sort key and default to ascending
+    return { key, direction: 'asc' };
+  });
+};
+
+
+
 const filteredTransactions = transactionsData.filter((transaction) => {
   const matchesSearchText =
     safeToString(transaction.account_id).includes(accountIDSearchText) &&
@@ -152,7 +169,7 @@ const filteredTransactions = transactionsData.filter((transaction) => {
 
   let matchesTipRange = true;
   if (tipStartNumber && tipEndNumber){
-    const total_amount = transaction.total_amount;
+    const total_amount = transaction.tip;
     matchesTipRange = tipStartNumber <= total_amount && total_amount <= tipEndNumber;
   }
 
@@ -177,6 +194,19 @@ const filteredTransactions = transactionsData.filter((transaction) => {
 
 const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
 
+const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+  if (!sortConfig) {
+    // Default sorting by Transaction.id
+    return b.id - a.id;
+  }
+
+  const { key, direction } = sortConfig;
+  const order = direction === 'asc' ? 1 : -1;
+
+  if (a[key] < b[key]) return -1 * order;
+  if (a[key] > b[key]) return 1 * order;
+  return 0;
+});
 
 
   useEffect(() => {
@@ -186,7 +216,9 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
   
 
   useEffect(() => {setCurrentPage(1)}, 
-  [accountIDSearchText,
+  [
+    sortConfig,
+    accountIDSearchText,
     riderAccountIDSearchText,
     refIDSearchText,
     couponSearchText,
@@ -227,13 +259,14 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
 
   useEffect(() => {
     
-      setCurrentTransactions(filteredTransactions.slice(indexOfFirstTrip, indexOfLastTrip));
+    setCurrentTransactions(sortedTransactions.slice(indexOfFirstTrip, indexOfLastTrip));
       
     
   }, [
     loading,
     rowsPerPage,
     currentPage,
+    sortConfig,
     accountIDSearchText,
     riderAccountIDSearchText,
     refIDSearchText,
@@ -304,7 +337,8 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
         </button>
       </div> */}
 
-      <div tabIndex={0} onClick={() => {  
+      <div tabIndex={0} onClick={() => {
+                setSortConfig(null)  
                 setAccountIDSearchText("")
                 setRiderAccountIDSearchText("")
                 setRefIDSearchText("")
@@ -341,6 +375,7 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
                 setRapidooEarnedSearchText("")
                 setOgPickupAdrSearchText("")
                 setOgDropoffAdrSearchText("")
+                setCurrentPage(1)
                 }} role="button" className="btn m-1 w-35 h-10 bg-yellow-200 border-2 border-black-2">
                 Reset
               </div>
@@ -363,22 +398,43 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
                 </svg>
                 </div>
                 <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-25 p-2 shadow">
-                <li><a onClick={() => setRowsPerPage(5)}>5</a></li>      
-                <li><a onClick={() => setRowsPerPage(10)}>10</a></li>
-                <li><a onClick={() => setRowsPerPage(15)}>15</a></li>         
-                <li><a onClick={() => setRowsPerPage(20)}>20</a></li>
-                <li><a onClick={() => setRowsPerPage(25)}>25</a></li>
-                <li><a onClick={() => setRowsPerPage(30)}>30</a></li>
-                <li><a onClick={() => setRowsPerPage(35)}>35</a></li>
-                <li><a onClick={() => setRowsPerPage(40)}>40</a></li>
-                <li><a onClick={() => setRowsPerPage(45)}>45</a></li>
-                <li><a onClick={() => setRowsPerPage(50)}>50</a></li>
+                <li><a onClick={() => {setRowsPerPage(5)
+                  setCurrentPage(1)
+                }}>5</a></li>      
+                <li><a onClick={() => {setRowsPerPage(10)
+                  setCurrentPage(1)
+                }}>10</a></li>
+                <li><a onClick={() => {setRowsPerPage(15)
+                  setCurrentPage(1)
+                }}>15</a></li>         
+                <li><a onClick={() => {setRowsPerPage(20)
+                  setCurrentPage(1)
+                }}>20</a></li>
+                <li><a onClick={() => {setRowsPerPage(25)
+                  setCurrentPage(1)
+                }}>25</a></li>
+                <li><a onClick={() => {setRowsPerPage(30)
+                  setCurrentPage(1)
+                }}>30</a></li>
+                <li><a onClick={() => {setRowsPerPage(35)
+                  setCurrentPage(1)
+                }}>35</a></li>
+                <li><a onClick={() => {setRowsPerPage(40)
+                  setCurrentPage(1)
+                }}>40</a></li>
+                <li><a onClick={() => {setRowsPerPage(45)
+                  setCurrentPage(1)
+                }}>45</a></li>
+                <li><a onClick={() => {setRowsPerPage(50)
+                  setCurrentPage(1)
+                }}>50</a></li>
 
                   </ul>          
               </div>
       <TableTransactionsInner
       fullTransactionsData={fullTransactionsData}
       currentTransactions={currentTransactions}
+      sortConfig={sortConfig}
       accountIDSearchText={accountIDSearchText}
       riderAccountIDSearchText={riderAccountIDSearchText}
       refIDSearchText={refIDSearchText}
@@ -417,6 +473,7 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
       rapidooEarnedSearchText={rapidooEarnedSearchText}
       ogPickupAdrSearchText={ogPickupAdrSearchText}
       ogDropoffAdrSearchText={ogDropoffAdrSearchText}
+      handleSort={handleSort}
       setAccountIDSearchText={setAccountIDSearchText}
       setRiderAccountIDSearchText={setRiderAccountIDSearchText}
       setRefIDSearchText={setRefIDSearchText}
@@ -470,7 +527,7 @@ const totalPages = Math.ceil(filteredTransactions.length / rowsPerPage);
           Previous
         </button>
         <span className="px-4 py-2 mx-2 text-black-2 dark:text-gray-200">
-          Page {currentPage} of {totalPages}
+          Page <input type="number" value={currentPage} onChange={(e) => setCurrentPage(e.target.valueAsNumber)} className="max-w-10 border-2 border-black-2 text-center no-spinner rounded-md" /> of {totalPages}
         </span>
         <button
           onClick={() => handlePageChange(currentPage + 1)}

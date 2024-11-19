@@ -16,7 +16,8 @@ const ImageModal = ({showImageModal,image_dir}: Props) => {
             </button>
             </div>
 
-          <img src={image_dir} className='max-h-[475px] max-w-[900px]'/>
+          {image_dir === 'missing image' && "missing image" }
+          {image_dir !== 'missing image' &&<img src={image_dir} className='max-h-[475px] max-w-[900px]'/>}
           
           </div>
         </div>
