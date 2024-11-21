@@ -186,7 +186,7 @@ const SignIn: React.FC = () => {
 
             {alertVisible && <Alert_Error text={"Incorrect username or password "} />}
 
-              <form onSubmit={(e) => AttemptLogIn(e, setAlertVisibility, setEmail, setPassword, setEmailRequired, setPasswordRequired)}>
+            
               <div className="mb-4">
                 <label className="mb-2.5 block font-medium text-black dark:text-white">
                   Email
@@ -252,12 +252,12 @@ const SignIn: React.FC = () => {
                     type="submit"
                     value="Sign In"
                     className="w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90"
+                    onClick={(e) => AttemptLogIn(email, password, setAlertVisibility, setEmail, setPassword, setEmailRequired, setPasswordRequired)}
                     
                   />
                 </div>
                 {/* </Link> */}
 
-              </form>
               
               <button onClick= {() => signIn('google', { redirect: false })}
         className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50"

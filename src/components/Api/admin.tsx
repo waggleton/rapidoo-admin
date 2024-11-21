@@ -6,6 +6,7 @@ const ADMIN_BASE_URL = 'http://127.0.0.1:8000/v1/admin/';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { signIn, getSession, signOut } from 'next-auth/react';
+import { NextResponse } from "next/server";
 
 
 interface Admin {
@@ -204,14 +205,7 @@ export const updateUserMobile = async (adminId: number, mobileNumber: string) =>
   }
 };
 
-export const AttemptLogIn = async (event: React.FormEvent<HTMLFormElement>, setAlertVisibility: React.Dispatch<React.SetStateAction<boolean>>, setEmail: React.Dispatch<React.SetStateAction<string>>, setPassword: React.Dispatch<React.SetStateAction<string>>, setEmailRequired: React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired: React.Dispatch<React.SetStateAction<boolean>>) => {
-  event.preventDefault();
-
-  const form = event.target as HTMLFormElement;
-
-  const formData = new FormData(form);
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+export const AttemptLogIn = async (email: string, password: string, setAlertVisibility: React.Dispatch<React.SetStateAction<boolean>>, setEmail: React.Dispatch<React.SetStateAction<string>>, setPassword: React.Dispatch<React.SetStateAction<string>>, setEmailRequired: React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired: React.Dispatch<React.SetStateAction<boolean>>) => {
   
   console.log(email);
   console.log(password);
@@ -251,9 +245,10 @@ export const AttemptLogIn = async (event: React.FormEvent<HTMLFormElement>, setA
     if (data.message === "login success") {
       Cookies.set("token", data.token);
       Cookies.set("user_name", data.name);
-      Cookies.set("user_email", email)
+      Cookies.set("user_email", email);
+      Cookies.set("user_id", data.id);
       setAlertVisibility(false);
-      window.location.href = "/#";
+      
     }
     else if (data.message === "username and password combination not found" && !email && password){
       setAlertVisibility(true);
@@ -278,6 +273,39 @@ export const AttemptLogIn = async (event: React.FormEvent<HTMLFormElement>, setA
   }
 
 
+}
+
+export const GoogleSignIn = async (userEmail : string) => {
+  const response = await fetch(ADMIN_BASE_URL + "login", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: userEmail,
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+    if (data.message === "login success") {
+      Cookies.set("token", data.token);
+      Cookies.set("user_name", data.name);
+      Cookies.set("user_email", userEmail);
+      Cookies.set("user_id", data.id);
+
+      NextResponse.redirect(new URL('/Dashboard'));
+
+    }
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+  }
 }
 
 export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetStateAction<boolean>>, setEmailRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordStrong : React.Dispatch<React.SetStateAction<boolean>>, setConfirmPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setMatchPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setShowRegisteredAlert : React.Dispatch<React.SetStateAction<boolean>>,  nameRequired : boolean, emailRequired : boolean, passwordRequired : boolean, confirmPasswordRequired : boolean, confirmMatchPasswordRequired : boolean, email : string, name: string, firstPassword: string, matchPassword: string) => {
@@ -354,16 +382,20 @@ export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetS
   
     console.log("Message:", data.message);
 
-    if (data.message == "already registered"){
+    if (data.message === "already registered"){
       setShowRegisteredAlert(true);
     }
-    else{
+    else if (data.message === "registered"){
 
       Cookies.set("token", data.token);
       Cookies.set("user_name", name);
-      Cookies.set("user_email", email); 
+      Cookies.set("user_email", email);
+      Cookies.set("user_id", data.id);
       window.location.href = "/#";
 
+    }
+    else{
+      console.log("Message:", data.message);
     }
     
 
@@ -463,4 +495,180 @@ export const gmailSignIn = async (email: string ) => {
   
 };
 
+export const setProfileImage = async (profileImageDir : string, id : string) => {
+  const response = await fetch(ADMIN_BASE_URL + "set_profile_image", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id,
+      profile_image: profileImageDir
+    }),
+  });
 
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+  }
+}
+
+export const getProfileImage = async (id: string): Promise<string> => {
+  const response = await fetch(ADMIN_BASE_URL + "get_profile_image", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+    const profileDir = data.profile_image;
+
+    return profileDir
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+
+    return "missing"
+  }
+}
+
+export const getAdminStatus = async (id: string): Promise<string> => {
+  const response = await fetch(ADMIN_BASE_URL + "get_status", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+    const userStatus = data.status;
+
+    return userStatus
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+
+    return "missing"
+  }
+}
+
+
+export const updateProfile = async (event: React.FormEvent<HTMLFormElement>, userID: string) => {
+  event.preventDefault();
+
+  const form = event.target as HTMLFormElement;
+
+  const formData = new FormData(form);
+  const id = userID;
+  const name = formData.get('fullName') as string;
+
+  const response = await fetch(ADMIN_BASE_URL + "update_username", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id,
+      name: name
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+    
+    Cookies.set("user_name", data.name);
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+  }
+
+
+}
+
+export const updatePassword = async (password: string, userID: string) => {
+
+  const response = await fetch(ADMIN_BASE_URL + "update_password", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: userID,
+      password: password
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+  }
+
+
+}
+
+export const checkPasswordMatch = async (password : string, id : string, setPasswordMatch: React.Dispatch<React.SetStateAction<boolean>>) => {
+  const response = await fetch(ADMIN_BASE_URL + "check_password", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id,
+      password: password
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+    if (data.message == "password match"){
+      setPasswordMatch(true)
+    }
+    else{
+      setPasswordMatch(false)
+    }
+
+  } else {
+    const errorData = await response.json();
+
+    setPasswordMatch(false)
+    console.error("Error message:", errorData.message);
+  }
+}

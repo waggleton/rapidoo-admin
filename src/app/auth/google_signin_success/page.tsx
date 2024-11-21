@@ -8,17 +8,20 @@ import { useSearchParams } from 'next/navigation';
 
 
 const google_redirect = () => {
-  const [username, setUserName] = useState<string>("");
-  const [useremail, setUserEmail] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userID, setUserID] = useState<string>("");
   const searchParams = useSearchParams();
 
   useEffect(() => {
 
     setUserEmail(searchParams.get('email') as string);
     setUserName(searchParams.get('user') as string);
+    setUserID(searchParams.get('id') as string);
 
-    Cookies.set('user_name', username);
-    Cookies.set('user_email', useremail);
+    Cookies.set('user_name', userName);
+    Cookies.set('user_email', userEmail);
+    Cookies.set('user_id', userID);
   
 });
 

@@ -1,4 +1,3 @@
-// src/app/api/auth/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import google_redirect from '@/app/auth/google_signin_success/page';
@@ -19,9 +18,9 @@ const gmailSignIn = async (email) => {
 
     if (response.ok) {
       if (data.message === "email found") {
-        return true;
+        return data.id;
       } else if (data.message === "email not found") {
-        return false;
+        return data.id;
       }
     } else {
       console.error("API login failed");
@@ -42,17 +41,10 @@ const handler = NextAuth({
     async signIn({ account, profile }) { 
       const signInResult = await gmailSignIn(profile.email);
 
-      if (signInResult === true) {
-
-        Cookies.set('user_name', profile.name);
-        Cookies.set('user_email', profile.email);
-
-        return `/auth/google_signin_success?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}`;
-
+      if (signInResult !== undefined) {
+        return `/auth/google_signin_success?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}&id=${encodeURIComponent(signInResult)}`;
       } else {
-        
         return `/auth/google_signup?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}`;
-
       }
     },
 

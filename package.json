@@ -16,6 +16,7 @@
     "flatpickr": "^4.6.13",
     "flowbite": "^2.5.2",
     "framer-motion": "^11.11.11",
+    "fs": "^0.0.1-security",
     "js-cookie": "^3.0.5",
     "jsvectormap": "^1.6.0",
     "next": "^14.2.4",
@@ -24,7 +25,8 @@
     "react-apexcharts": "^1.4.1",
     "react-aria-components": "^1.4.1",
     "react-datetime": "^3.2.0",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-uploader": "^3.43.0"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",

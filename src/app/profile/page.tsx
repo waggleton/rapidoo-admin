@@ -5,14 +5,85 @@ import Image from "next/image";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Cookies from 'js-cookie';
 import { useEffect, useState } from "react";
+import { checkPasswordMatch, getAdminStatus, getProfileImage, updateProfile } from "@/components/Api/admin";
+import ChangePasswordModal from "@/components/Modal/ChangePassword";
 
 
 const Profile = () => {
+
+  const [userID, setUserID] = useState<string>("");
   const [userName, setUserName] = useState<string | undefined>("");
+  const [userEmail, setUserEmail] = useState<string | undefined>("");
+  const [userStatus, setUserStatus] = useState<string | undefined>("");
+  const [userPassword, setUserPassword] = useState<string | undefined>("");
+
+  const [firstLoad, setFirstLoad] = useState(0);
+
+  const [file, setFile] = useState<File>();
+  const [profileImgDir, setProfileImgDir] = useState<any | undefined>(undefined);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(false);
 
   useEffect(() => {
     setUserName(Cookies.get('user_name'));
-  }, []);
+    setUserEmail(Cookies.get('user_email'));
+    setUserID(Cookies.get('user_id') ?? 'missing');
+    setFirstLoad(1)
+  }, [firstLoad]);
+
+  useEffect(() => {
+    // Define the async function inside useEffect
+    const fetchProfileImage = async () => {
+      const image = await getProfileImage(userID ?? "missing");
+      const formattedImage = image.replace(/^public\\/, '/').replace(/\\+/g, '/');
+
+      const finalImagePath = formattedImage.startsWith('/') ? formattedImage : '/' + formattedImage;
+      console.log(finalImagePath);
+      setProfileImgDir(finalImagePath);
+    }
+    
+    const fetchStatus = async () => {
+      const status = await getAdminStatus(userID ?? "missing");
+      setUserStatus(status);
+    };
+
+    // Call the async function
+    fetchProfileImage();
+    fetchStatus();
+
+    // No return value or cleanup function needed
+  });
+
+const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault()
+
+  if (!file) return
+
+  try {
+    const data = new FormData()
+    data.set('file', file)
+    data.set('id', userID )
+
+    const res = await fetch('api/upload', {
+      method: 'POST',
+      body: data
+    })
+
+    //handle the error
+    if(!res.ok) throw new Error(await res.text())
+
+    else{
+      window.location.reload()
+    }
+      
+  }
+  catch (e: any) {
+    console.error(e)
+  }
+
+
+}
 
   return (
     <DefaultLayout>
@@ -28,7 +99,7 @@ const Profile = () => {
                 </h3>
               </div>
               <div className="p-7">
-                <form action="#">
+                <form action="#" onSubmit={(e) => updateProfile(e, userID)}>
                   <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                     <div className="w-full sm:w-1/2">
                       <label
@@ -67,6 +138,7 @@ const Profile = () => {
                           className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                           type="text"
                           value={userName}
+                          onChange={(e) => setUserName(e.target.value)}
                           name="fullName"
                           id="fullName"
                         />
@@ -113,8 +185,10 @@ const Profile = () => {
                         type="email"
                         name="emailAddress"
                         id="emailAddress"
+                        value={userEmail}
                         placeholder="devidjond45@gmail.com"
                         defaultValue="devidjond45@gmail.com"
+                        readOnly
                       />
                     </div>
                   </div>
@@ -124,67 +198,33 @@ const Profile = () => {
                       className="mb-3 block text-sm font-medium text-black dark:text-white"
                       htmlFor="Username"
                     >
-                      Password
+                    Change Password (To change password, enter current password)
                     </label>
                     <input
-                      className="w-full rounded border border-stroke bg-gray px-4.5 py-3 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                       type="password"
-                      name="Username"
-                      id="Username"
-                      placeholder="devidjhon24"
-                      defaultValue="devidjhon24"
+                      name="current_password"
+                      value={userPassword}
+                      id="current_password"
+                      placeholder="leave blank to keep current password"
+                      className="w-full rounded border border-stroke bg-gray px-4.5 py-3 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      onChange={(e) => setUserPassword(e.target.value)}
+
                     />
+
+              <button
+                type="button"
+              className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  onClick={(e) => checkPasswordMatch(userPassword ?? "missing", userID, setPasswordMatch)}
+                >
+                  Update
+                </button>
                   </div>
 
-                  <div className="mb-5.5">
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="Username"
-                    >
-                      BIO
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4.5 top-4">
-                        <svg
-                          className="fill-current"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <g opacity="0.8" clipPath="url(#clip0_88_10224)">
-                            <path
-                              fillRule="evenodd"
-                              clipRule="evenodd"
-                              d="M1.56524 3.23223C2.03408 2.76339 2.66997 2.5 3.33301 2.5H9.16634C9.62658 2.5 9.99967 2.8731 9.99967 3.33333C9.99967 3.79357 9.62658 4.16667 9.16634 4.16667H3.33301C3.11199 4.16667 2.90003 4.25446 2.74375 4.41074C2.58747 4.56702 2.49967 4.77899 2.49967 5V16.6667C2.49967 16.8877 2.58747 17.0996 2.74375 17.2559C2.90003 17.4122 3.11199 17.5 3.33301 17.5H14.9997C15.2207 17.5 15.4326 17.4122 15.5889 17.2559C15.7452 17.0996 15.833 16.8877 15.833 16.6667V10.8333C15.833 10.3731 16.2061 10 16.6663 10C17.1266 10 17.4997 10.3731 17.4997 10.8333V16.6667C17.4997 17.3297 17.2363 17.9656 16.7674 18.4344C16.2986 18.9033 15.6627 19.1667 14.9997 19.1667H3.33301C2.66997 19.1667 2.03408 18.9033 1.56524 18.4344C1.0964 17.9656 0.833008 17.3297 0.833008 16.6667V5C0.833008 4.33696 1.0964 3.70107 1.56524 3.23223Z"
-                              fill=""
-                            />
-                            <path
-                              fillRule="evenodd"
-                              clipRule="evenodd"
-                              d="M16.6664 2.39884C16.4185 2.39884 16.1809 2.49729 16.0056 2.67253L8.25216 10.426L7.81167 12.188L9.57365 11.7475L17.3271 3.99402C17.5023 3.81878 17.6008 3.5811 17.6008 3.33328C17.6008 3.08545 17.5023 2.84777 17.3271 2.67253C17.1519 2.49729 16.9142 2.39884 16.6664 2.39884ZM14.8271 1.49402C15.3149 1.00622 15.9765 0.732178 16.6664 0.732178C17.3562 0.732178 18.0178 1.00622 18.5056 1.49402C18.9934 1.98182 19.2675 2.64342 19.2675 3.33328C19.2675 4.02313 18.9934 4.68473 18.5056 5.17253L10.5889 13.0892C10.4821 13.196 10.3483 13.2718 10.2018 13.3084L6.86847 14.1417C6.58449 14.2127 6.28409 14.1295 6.0771 13.9225C5.87012 13.7156 5.78691 13.4151 5.85791 13.1312L6.69124 9.79783C6.72787 9.65131 6.80364 9.51749 6.91044 9.41069L14.8271 1.49402Z"
-                              fill=""
-                            />
-                          </g>
-                          <defs>
-                            <clipPath id="clip0_88_10224">
-                              <rect width="20" height="20" fill="white" />
-                            </clipPath>
-                          </defs>
-                        </svg>
-                      </span>
-
-                      <textarea
-                        className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                        name="bio"
-                        id="bio"
-                        rows={6}
-                        placeholder="Write your bio here"
-                        defaultValue="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque posuere fermentum urna, eu condimentum mauris tempus ut. Donec fermentum blandit aliquet."
-                      ></textarea>
-                    </div>
+                  <div>
+                  {/* <button className="btn bg-yellow-200 border border-black-2" onClick={(e) => setShowPasswordModal(true)}>Change Password</button> */}
                   </div>
+
+                  {passwordMatch && <ChangePasswordModal setShowPasswordModal={setShowPasswordModal} userID={userID} />}
 
                   <div className="flex justify-end gap-4.5">
                     <button
@@ -212,16 +252,27 @@ const Profile = () => {
                 </h3>
               </div>
               <div className="p-7">
-                <form action="#">
+                <form onSubmit={(e) => imageSubmit(e)}>
                   <div className="mb-4 flex items-center gap-3">
                     <div className="h-14 w-14 rounded-full">
-                      <Image
-                        src={"/images/user/user-03.png"}
-                        width={55}
-                        height={55}
-                        alt="User"
-                      />
-                    </div>
+                    {file ? (
+                  <Image
+                    src={URL.createObjectURL(file)}
+                    width={55}
+                    height={55}
+                    alt="Preview"
+                    className="rounded-full object-cover w-full h-full"
+                  />
+                ) : (
+                  <Image
+                    src={profileImgDir === "/" ? '/images/logo/Rapidoo Human Logo.png' : profileImgDir}
+                    width={55}
+                    height={55}
+                    alt="User"
+                    className="rounded-full object-cover w-full h-full"
+                  />
+                )}
+              </div>
                     <div>
                       <span className="mb-1.5 text-black dark:text-white">
                         Edit your photo
@@ -244,7 +295,9 @@ const Profile = () => {
                     <input
                       type="file"
                       accept="image/*"
+                      name="file"
                       className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
+                      onChange={(e) => setFile(e.target.files?.[0])}
                     />
                     <div className="flex flex-col items-center justify-center space-y-3">
                       <span className="flex h-10 w-10 items-center justify-center rounded-full border border-stroke bg-white dark:border-strokedark dark:bg-boxdark">

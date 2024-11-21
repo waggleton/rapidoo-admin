@@ -5,14 +5,18 @@ import ClickOutside from "@/components/ClickOutside";
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import LogoutButton from "../Api/admin";
+import { getProfileImage } from "../Api/admin";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [userID, setUserID] = useState<string | undefined>(undefined);
+  const [profileImgDir, setProfileImgDir] = useState<any | undefined>(undefined);
   
 
   useEffect(() => {
     const user_name = Cookies.get('user_name');
+    setUserID(Cookies.get('user_id'))
     if (user_name) {
       setUserName(user_name);
     }
@@ -20,6 +24,25 @@ const DropdownUser = () => {
       setUserName("missing")
     }
   });
+
+  useEffect(() => {
+    // Define the async function inside useEffect
+    const fetchProfileImage = async () => {
+      const image = await getProfileImage(userID ?? "missing");
+      const formattedImage = image.replace(/^public\\/, '/').replace(/\\+/g, '/');
+
+      const finalImagePath = formattedImage.startsWith('/') ? formattedImage : '/' + formattedImage;
+      console.log(finalImagePath);
+      setProfileImgDir(finalImagePath);
+    };
+
+    // Call the async function
+    fetchProfileImage();
+
+    // No return value or cleanup function needed
+  });
+
+
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
@@ -36,14 +59,11 @@ const DropdownUser = () => {
 
         <span className="h-12 w-12 rounded-full">
           <Image
-            width={112}
-            height={112}
-            src={"/images/user/user-01.png"}
-            style={{
-              width: "auto",
-              height: "auto",
-            }}
+            width={55}
+            height={55}
+            src={profileImgDir === "/" ? '/images/logo/Rapidoo Human Logo.png' : profileImgDir}
             alt="User"
+            className="rounded-full object-cover w-full h-full"
           />
         </span>
 
