@@ -307,7 +307,6 @@ export const GoogleSignIn = async (userEmail : string) => {
     console.error("Error message:", errorData.message);
   }
 }
-
 export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetStateAction<boolean>>, setEmailRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordStrong : React.Dispatch<React.SetStateAction<boolean>>, setConfirmPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setMatchPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setShowRegisteredAlert : React.Dispatch<React.SetStateAction<boolean>>,  nameRequired : boolean, emailRequired : boolean, passwordRequired : boolean, confirmPasswordRequired : boolean, confirmMatchPasswordRequired : boolean, email : string, name: string, firstPassword: string, matchPassword: string) => {
 
   const user_email = email;
@@ -382,7 +381,7 @@ export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetS
   
     console.log("Message:", data.message);
 
-    if (data.message === "already registered"){
+    if (data.message == "already registered"){
       setShowRegisteredAlert(true);
     }
     else if (data.message === "registered"){
@@ -390,12 +389,14 @@ export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetS
       Cookies.set("token", data.token);
       Cookies.set("user_name", name);
       Cookies.set("user_email", email);
-      Cookies.set("user_id", data.id);
+      Cookies.set("user_id", data.id); 
       window.location.href = "/#";
 
     }
     else{
+
       console.log("Message:", data.message);
+
     }
     
 

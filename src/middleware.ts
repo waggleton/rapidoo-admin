@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
 
   // Define the protected routes
-  const protectedRoutes = ['/Dashboard', '/profile', '/other-protected-route'];
+  const protectedRoutes = ['/Dashboard', '/profile', '/parcel', '/trips', '/rider', '/customer', '/other-protected-route'];
   const loginRoutes = ['/auth/signin'];
 
   // If the user is not authenticated and tries to access a protected route, redirect to SignIn
