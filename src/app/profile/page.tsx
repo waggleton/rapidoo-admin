@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 import { useEffect, useState } from "react";
 import { checkPasswordMatch, getAdminStatus, getProfileImage, updateProfile } from "@/components/Api/admin";
 import ChangePasswordModal from "@/components/Modal/ChangePassword";
+import Alert_Success from "@/components/Alerts/Alert_Success";
 
 
 const Profile = () => {
@@ -16,17 +17,24 @@ const Profile = () => {
   const [userEmail, setUserEmail] = useState<string | undefined>("");
   const [userStatus, setUserStatus] = useState<string | undefined>("");
   const [userPassword, setUserPassword] = useState<string | undefined>("");
+  const [newPassword, setNewPassword] = useState<string | undefined>("");
+
+  const [defaultUserName, setDefaultUserName] = useState<string | undefined>("");
 
   const [firstLoad, setFirstLoad] = useState(0);
 
-  const [file, setFile] = useState<File>();
+  const [file, setFile] = useState<File | null>();
   const [profileImgDir, setProfileImgDir] = useState<any | undefined>(undefined);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordMatch, setPasswordMatch] = useState(false);
+  const [passwordMatchAlert, setPasswordMatchAlert] = useState(false);
+
+  const [profileUpdateSuccess, setProfileUpdateSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     setUserName(Cookies.get('user_name'));
+    setDefaultUserName(Cookies.get('user_name'));
     setUserEmail(Cookies.get('user_email'));
     setUserID(Cookies.get('user_id') ?? 'missing');
     setFirstLoad(1)
@@ -92,6 +100,7 @@ const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
         <div className="grid grid-cols-5 gap-8">
           <div className="col-span-5 xl:col-span-3">
+            {profileUpdateSuccess && <Alert_Success text="Updated Successfully" />}
             <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="border-b border-stroke px-7 py-4 dark:border-strokedark">
                 <h3 className="font-medium text-black dark:text-white">
@@ -99,7 +108,7 @@ const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                 </h3>
               </div>
               <div className="p-7">
-                <form action="#" onSubmit={(e) => updateProfile(e, userID)}>
+
                   <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                     <div className="w-full sm:w-1/2">
                       <label
@@ -208,39 +217,58 @@ const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                       placeholder="leave blank to keep current password"
                       className="w-full rounded border border-stroke bg-gray px-4.5 py-3 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                       onChange={(e) => setUserPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          checkPasswordMatch(userPassword ?? "missing", userID, setPasswordMatch, setPasswordMatchAlert);
+                        }
+                      }}
 
                     />
 
-              <button
+              {/* <button
                 type="button"
               className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
                   onClick={(e) => checkPasswordMatch(userPassword ?? "missing", userID, setPasswordMatch)}
                 >
                   Update
-                </button>
+                </button> */}
                   </div>
 
                   <div>
                   {/* <button className="btn bg-yellow-200 border border-black-2" onClick={(e) => setShowPasswordModal(true)}>Change Password</button> */}
                   </div>
-
-                  {passwordMatch && <ChangePasswordModal setShowPasswordModal={setShowPasswordModal} userID={userID} />}
+                  {passwordMatchAlert && (
+                    <div><span className="text-red-500 text-sm mt-1">Password does not match</span></div>
+                  )}
+                  {passwordMatch && <ChangePasswordModal userID={userID} setNewPassword={setNewPassword} />}
 
                   <div className="flex justify-end gap-4.5">
                     <button
                       className="flex justify-center rounded border border-stroke px-6 py-2 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
-                      type="submit"
+                      
+                      onClick={() => {
+                        setPasswordMatch(false)
+                        setUserName(Cookies.get('user_name'))
+                        setProfileUpdateSuccess(false)
+                        setUserPassword("")
+                      }}
                     >
                       Cancel
                     </button>
                     <button
                       className="flex justify-center rounded bg-primary px-6 py-2 font-medium text-gray hover:bg-opacity-90"
-                      type="submit"
+                      
+                      onClick={() => 
+                        {
+                          setProfileUpdateSuccess(false)
+                          updateProfile(userName, userID, newPassword, setProfileUpdateSuccess, setUserName)
+                          setPasswordMatch(false)
+                          setUserPassword("")
+                        }}
                     >
                       Save
                     </button>
                   </div>
-                </form>
               </div>
             </div>
           </div>
@@ -276,14 +304,6 @@ const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                     <div>
                       <span className="mb-1.5 text-black dark:text-white">
                         Edit your photo
-                      </span>
-                      <span className="flex gap-2.5">
-                        <button className="text-sm hover:text-primary">
-                          Delete
-                        </button>
-                        <button className="text-sm hover:text-primary">
-                          Update
-                        </button>
                       </span>
                     </div>
                   </div>
@@ -340,7 +360,8 @@ const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   <div className="flex justify-end gap-4.5">
                     <button
                       className="flex justify-center rounded border border-stroke px-6 py-2 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
-                      type="submit"
+                      type="submit" 
+                      onClick={() => setFile(null)}
                     >
                       Cancel
                     </button>
