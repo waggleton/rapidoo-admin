@@ -646,7 +646,7 @@ export const updatePassword = async (password: string, userID: string) => {
 
 }
 
-export const checkPasswordMatch = async (password : string, id : string, setPasswordMatch: React.Dispatch<React.SetStateAction<boolean>>) => {
+export const checkPasswordMatch = async (password : string, id : string, setPasswordMatch: React.Dispatch<React.SetStateAction<boolean>>, setPasswordMatchAlert: React.Dispatch<React.SetStateAction<boolean>>) => {
   const response = await fetch(ADMIN_BASE_URL + "check_password", {
     method: "post",
     headers: {
@@ -665,9 +665,11 @@ export const checkPasswordMatch = async (password : string, id : string, setPass
 
     if (data.message == "password match"){
       setPasswordMatch(true)
+      setPasswordMatchAlert(false)
     }
     else{
       setPasswordMatch(false)
+      setPasswordMatchAlert(true)
     }
 
   } else {

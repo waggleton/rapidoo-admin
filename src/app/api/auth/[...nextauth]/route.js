@@ -41,7 +41,7 @@ const handler = NextAuth({
     async signIn({ account, profile }) { 
       const signInResult = await gmailSignIn(profile.email);
 
-      if (signInResult !== undefined) {
+      if (signInResult === "email found") {
         return `/auth/google_signin_success?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}&id=${encodeURIComponent(signInResult)}`;
       } else {
         return `/auth/google_signup?email=${encodeURIComponent(profile.email)}&user=${encodeURIComponent(profile.name)}`;
