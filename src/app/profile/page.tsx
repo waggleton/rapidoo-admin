@@ -237,7 +237,7 @@ const imageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   <div>
                   {/* <button className="btn bg-yellow-200 border border-black-2" onClick={(e) => setShowPasswordModal(true)}>Change Password</button> */}
                   </div>
-                  {passwordMatchlert && (
+                  {passwordMatchAlert && (
                     <div><span className="text-red-500 text-sm mt-1">Password does not match</span></div>
                   )}
                   {passwordMatch && <ChangePasswordModal userID={userID} setNewPassword={setNewPassword} />}
