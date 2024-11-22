@@ -6,6 +6,7 @@ const ADMIN_BASE_URL = 'http://127.0.0.1:8000/v1/admin/';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { signIn, getSession, signOut } from 'next-auth/react';
+import { NextResponse } from "next/server";
 
 
 interface Admin {
@@ -56,6 +57,50 @@ interface AdminDashboardProps {
   initialAdminData: Admin[]; 
 }
 
+interface Transaction {
+  id: number;
+  account_id: number;
+  rider_account_id: number;
+  reference_id: string;
+  coupon: string;
+  distance: number;
+  sender_details: string;
+  receiver_details: string;
+  pickup_address: string;
+  dropoff_address: string;
+  multiple_dropoff: boolean;
+  rebate: number;
+  processing_fee: number;
+  discount: number;
+  transaction_amount: number;
+  total_amount: number;
+  tip: number;
+  notes: string;
+  vehicle_type: string;
+  payment_method: string;
+  sender_payment: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  customer_name: string;
+  rider_earned: number;
+  rapidoo_earned: number;
+  original_pickup_address: string;
+  original_dropoff_address: string;
+}
+
+export const fetchTransactionsnData = async (setTransactionsData: React.Dispatch<React.SetStateAction<Transaction[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
+  setLoading(true);
+  try {
+    const response = await fetch(ADMIN_BASE_URL + "transactions");
+    const data = await response.json();
+    setTransactionsData(data); 
+  } catch (error) {
+    console.error("Failed to fetch admin data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
 
 export const fetchAdminData = async (setAdminData: React.Dispatch<React.SetStateAction<Admin[]>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
@@ -229,6 +274,40 @@ export const AttemptLogIn = async (email: string, password: string, setAlertVisi
 
 }
 
+
+export const GoogleSignIn = async (userEmail : string) => {
+  const response = await fetch(ADMIN_BASE_URL + "login", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: userEmail,
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+    if (data.message === "login success") {
+      Cookies.set("token", data.token);
+      Cookies.set("user_name", data.name);
+      Cookies.set("user_email", userEmail);
+      Cookies.set("user_id", data.id);
+
+      NextResponse.redirect(new URL('/Dashboard'));
+
+    }
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+  }
+}
+
 export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetStateAction<boolean>>, setEmailRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setPasswordStrong : React.Dispatch<React.SetStateAction<boolean>>, setConfirmPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setMatchPasswordRequired : React.Dispatch<React.SetStateAction<boolean>>, setShowRegisteredAlert : React.Dispatch<React.SetStateAction<boolean>>,  nameRequired : boolean, emailRequired : boolean, passwordRequired : boolean, confirmPasswordRequired : boolean, confirmMatchPasswordRequired : boolean, email : string, name: string, firstPassword: string, matchPassword: string) => {
 
   const user_email = email;
@@ -303,16 +382,20 @@ export const AttemptRegister = async(setNameRequired : React.Dispatch<React.SetS
   
     console.log("Message:", data.message);
 
-    if (data.message == "already registered"){
+    if (data.message === "already registered"){
       setShowRegisteredAlert(true);
     }
-    else{
+    else if (data.message === "registered"){
 
       Cookies.set("token", data.token);
       Cookies.set("user_name", name);
-      Cookies.set("user_email", email); 
+      Cookies.set("user_email", email);
+      Cookies.set("user_id", data.id);
       window.location.href = "/#";
 
+    }
+    else{
+      console.log("Message:", data.message);
     }
     
 
@@ -412,6 +495,29 @@ export const gmailSignIn = async (email: string ) => {
   
 };
 
+export const setProfileImage = async (profileImageDir : string, id : string) => {
+  const response = await fetch(ADMIN_BASE_URL + "set_profile_image", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id,
+      profile_image: profileImageDir
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+  
+    console.log("Message:", data.message);
+
+  } else {
+    const errorData = await response.json();
+    
+    console.error("Error message:", errorData.message);
+  }
+}
 
 export const getProfileImage = async (id: string): Promise<string> => {
   const response = await fetch(ADMIN_BASE_URL + "get_profile_image", {
@@ -471,7 +577,6 @@ export const getAdminStatus = async (id: string): Promise<string> => {
   }
 }
 
-
 export const updateProfile = async (name: string | undefined, userID: string, password: string | undefined, success: React.Dispatch<React.SetStateAction<boolean>>, setUserName: React.Dispatch<React.SetStateAction<string | undefined>>) => {
 
   const id = userID;
@@ -512,6 +617,7 @@ export const updateProfile = async (name: string | undefined, userID: string, pa
 
 }
 
+
 export const updatePassword = async (password: string, userID: string) => {
 
   const response = await fetch(ADMIN_BASE_URL + "update_password", {
@@ -539,7 +645,7 @@ export const updatePassword = async (password: string, userID: string) => {
 
 }
 
-export const checkPasswordMatch = async (password : string, id : string, setPasswordMatch: React.Dispatch<React.SetStateAction<boolean>>, setPasswordMatchAlert: React.Dispatch<React.SetStateAction<boolean>>) => {
+export const checkPasswordMatch = async (password : string, id : string, setPasswordMatch: React.Dispatch<React.SetStateAction<boolean>>) => {
   const response = await fetch(ADMIN_BASE_URL + "check_password", {
     method: "post",
     headers: {
@@ -558,11 +664,9 @@ export const checkPasswordMatch = async (password : string, id : string, setPass
 
     if (data.message == "password match"){
       setPasswordMatch(true)
-      setPasswordMatchAlert(false)
     }
     else{
       setPasswordMatch(false)
-      setPasswordMatchAlert(true)
     }
 
   } else {
